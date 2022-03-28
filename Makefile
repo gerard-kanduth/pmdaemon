@@ -4,13 +4,13 @@ COMPILER=g++
 CFLAGS=-g -std=c++17 -pedantic -Wall -Wextra -Werror -Wshadow -Wconversion -Wunreachable-code
 COMPILE=$(COMPILER) $(OPTIONS)
 BUILD=build
-LIBRARIES=
+LIBRARIES=-I include
 
 # Compile the main program
-all: $(PROJECT_NAME)
+all: clean build $(PROJECT_NAME)
 
 $(PROJECT_NAME):
-	$(COMPILE) src/main.cpp -o $(BUILD)/$(PROJECT_NAME) $(LIBRARIES)
+	$(COMPILE) src/main.cpp src/settings.cpp -o $(BUILD)/$(PROJECT_NAME) $(LIBRARIES)
 
 # Create the build-folder
 build:
