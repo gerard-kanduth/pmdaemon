@@ -3,6 +3,8 @@
 #include <string>
 #include <set>
 #include <map>
+#include <cmath>
+#include "logger.h"
 
 using namespace std;
 
@@ -11,6 +13,7 @@ class Settings {
 	private:
 		const set<string> available_settings {
 			"LOGLEVEL",
+			"MAX_ERRORS",
 			"RULES_DIRECTORY",
 			"CHECK_INTERVAL",
 			"SEND_PROCESS_FILES",
@@ -33,6 +36,8 @@ class Settings {
 		void showSettings();
 		bool configAvailable();
 		bool readSettings();
+		int getCheckInterval();
+		int getMaxErrors();
 		string getLogLevel();
 		string getRulesDir();
 };

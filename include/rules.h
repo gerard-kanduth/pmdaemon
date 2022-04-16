@@ -3,6 +3,7 @@
 #include <dirent.h>
 #include <map>
 #include <set>
+#include "logger.h"
 
 using namespace std;
 

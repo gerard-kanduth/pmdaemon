@@ -5,19 +5,19 @@ void Logger::setLogLevel(string log_level) {
 }
 
 void Logger::instanceSetLogLevel(string log_level) {
-	if (log_level == "info") {
+	if (log_level == "info" || log_level == "INFO") {
 		setlogmask(LOG_UPTO(LOG_INFO));
 		this->log_level = log_level;
 	}
-	else if (log_level == "notice") {
+	else if (log_level == "notice" || log_level == "NOTICE") {
 		setlogmask(LOG_UPTO(LOG_NOTICE));
 		this->log_level = log_level;
 	}
-	else if (log_level == "debug") {
+	else if (log_level == "debug" || log_level == "DEBUG") {
 		setlogmask(LOG_UPTO(LOG_DEBUG));
 		this->log_level = log_level;
 	}
-	else if (log_level == "error") {
+	else if (log_level == "error" || log_level == "ERROR") {
 		setlogmask(LOG_UPTO(LOG_ERR));
 		this->log_level = log_level;
 	}
@@ -26,7 +26,7 @@ void Logger::instanceSetLogLevel(string log_level) {
 		setlogmask(LOG_UPTO(LOG_INFO));
 		this->log_level = "info";
 	}
-	Logger::logInfo("Setting Loglevel to \'"+log_level+"\'");
+	Logger::logInfo("Setting LOGLEVEL to \'"+log_level+"\'");
 }
 
 void Logger::logInfo(string message){

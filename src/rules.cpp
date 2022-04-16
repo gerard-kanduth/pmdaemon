@@ -1,5 +1,4 @@
 #include "rules.h"
-#include "logger.h"
 
 Rules::Rules(string rules_directory) {
 	this->rules_directory = rules_directory.c_str();
