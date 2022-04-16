@@ -5,12 +5,13 @@ CFLAGS=-g -std=c++17 -pedantic -Wall -Wextra -Werror -Wshadow -Wconversion -Wunr
 COMPILE=$(COMPILER) $(OPTIONS)
 BUILD=build
 LIBRARIES=-I include
+CPP_FILES=src/main.cpp src/settings.cpp src/rules.cpp src/logger.cpp
 
 # Compile the main program
 all: clean build $(PROJECT_NAME)
 
 $(PROJECT_NAME):
-	$(COMPILE) src/main.cpp src/settings.cpp -o $(BUILD)/$(PROJECT_NAME) $(LIBRARIES)
+	$(COMPILE) $(CPP_FILES) -o $(BUILD)/$(PROJECT_NAME) $(LIBRARIES)
 
 # Create the build-folder
 build:

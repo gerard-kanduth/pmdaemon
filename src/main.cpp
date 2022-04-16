@@ -1,34 +1,43 @@
-#include <syslog.h>
 #include <iostream>
 #include <string>
 #include "settings.h"
+#include "rules.h"
+#include "logger.h"
 
 using namespace std;
 
 // name of the daemon
 const char *daemon_name = "pmdaemon";
 
-// settings object
+// logger instance (singleton-class)
+Logger Logger::logger_Instance;
+
+// settings object (contains all settings)
 Settings *settings;
 
+// rules object (contains all loaded rules)
+Rules *rules;
+
 int main() {
-	openlog(daemon_name, 0, LOG_USER);
-	syslog(LOG_NOTICE, "Process Monitoring Daemon started!");
-	
+
+	// initialize a singleton instance for the logger
+	Logger::getInstance();
+
 	// load the configuration file
-	settings = new Settings("/srv/process_monitoring_daemon/settings.conf", daemon_name);
-	
+	settings = new Settings("/srv/process_monitoring_daemon/settings.conf");
+
 	// terminate if configuration is broken
 	if (!settings->configAvailable()){
-		syslog(LOG_PERROR, "Unable to load configuration! Stopping!");
-		closelog();
+		Logger::getInstance().logError("Unable to load configuration! Stopping!");
 		return 1;
 	}
-	
-	if (settings->getLogLevel() == "info") {
-		syslog(LOG_INFO, "Hello World");
-	}
-	syslog(LOG_NOTICE, "TEST");
-	closelog();
+
+	// load rules
+	rules = new Rules(settings->getRulesDir());
+
+	Logger::getInstance().logInfo("TEST");
+
+
+
 	return 0;
 }

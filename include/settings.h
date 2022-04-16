@@ -3,14 +3,13 @@
 #include <string>
 #include <set>
 #include <map>
-#include <syslog.h>
 
 using namespace std;
 
 class Settings {
 
 	private:
-		const set<string> available_settings{
+		const set<string> available_settings {
 			"LOGLEVEL",
 			"RULES_DIRECTORY",
 			"CHECK_INTERVAL",
@@ -30,9 +29,10 @@ class Settings {
 		bool config_success = false;
 
 	public:
-		Settings(const char*, const char*);
+		Settings(const char*);
 		void showSettings();
 		bool configAvailable();
 		bool readSettings();
 		string getLogLevel();
+		string getRulesDir();
 };

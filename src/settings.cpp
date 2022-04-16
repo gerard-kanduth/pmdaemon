@@ -1,25 +1,23 @@
 #include "settings.h"
+#include "logger.h"
 
-Settings::Settings(const char *filename, const char *daemon_name){
+Settings::Settings(const char *filename) {
 	this->filename = filename;
-	this->daemon_name = daemon_name;
-	openlog(daemon_name, 0, LOG_USER);
-	syslog(LOG_NOTICE, "Loading configuration file %s", this->filename);
+	Logger::getInstance().logInfo(("Loading configuration file %s", this->filename));
 	this->config_success = readSettings();
-	closelog();
 }
 
-bool Settings::readSettings(){
+bool Settings::readSettings() {
 	this->settings_file.open(this->filename, ios::in);
 	if (!this->settings_file) {
-		syslog(LOG_PERROR, "Settings file %s is not present or readable!", this->filename);
+		Logger::getInstance().logError(("Settings file %s is not present or readable!", this->filename));
 		return false;
 	}
 	else {
-		if (this->settings_file.is_open()){
+		if (this->settings_file.is_open()) {
 			string line;
-			while(getline(this->settings_file, line)){
-				if(this->available_settings.find(line.substr(0, line.find("="))) != this->available_settings.end()){
+			while(getline(this->settings_file, line)) {
+				if(this->available_settings.find(line.substr(0, line.find("="))) != this->available_settings.end()) {
 					this->settings.insert(std::pair<string,string>(line.substr(0, line.find("=")),line.substr(line.find("=")+1)));
 				}
 			}
@@ -29,11 +27,11 @@ bool Settings::readSettings(){
 	return true;
 }
 
-bool Settings::configAvailable(){
+bool Settings::configAvailable() {
 	return this->config_success;
 }
 
-void Settings::showSettings(){
+void Settings::showSettings() {
 	for (auto s : this->settings)
 		std::cout << s.first << "\t-> " << s.second << '\n';	
 }
@@ -46,4 +44,11 @@ string Settings::getLogLevel() {
 		return settings["LOGLEVEL"];
 	else
 		return "info";
+}
+
+string Settings::getRulesDir() {
+	if (settings["RULES_DIRECTORY"].empty())
+		return "/etc/pmdaemon/rules.d";
+	else
+		return settings["RULES_DIRECTORY"];	
 }
