@@ -21,7 +21,7 @@ class Rule {
 		};
 		map<string, string> rules;
 		bool rule_success = false;
-		
+
 	public:
 		Rule();
 };
@@ -32,7 +32,7 @@ class Rules {
 		const char *rules_directory;
 		int rule_number = 0;
 		Rule rules[];
-	
+
 	public:
 		Rules(string);
 	

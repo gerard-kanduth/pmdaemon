@@ -1,48 +1,78 @@
 #include "logger.h"
 
-void Logger::setLogLevel(string loglevel) {
-	if (loglevel == "info") {
+void Logger::setLogLevel(string log_level) {
+	getInstance().instanceSetLogLevel(log_level);
+}
+
+void Logger::instanceSetLogLevel(string log_level) {
+	if (log_level == "info") {
 		setlogmask(LOG_UPTO(LOG_INFO));
-		this->loglevel = loglevel;
+		this->log_level = log_level;
 	}
-	else if (loglevel == "notice") {
+	else if (log_level == "notice") {
 		setlogmask(LOG_UPTO(LOG_NOTICE));
-		this->loglevel = loglevel;
+		this->log_level = log_level;
 	}
-	else if (loglevel == "debug") {
+	else if (log_level == "debug") {
 		setlogmask(LOG_UPTO(LOG_DEBUG));
-		this->loglevel = loglevel;
+		this->log_level = log_level;
 	}
-	else if (loglevel == "error") {
+	else if (log_level == "error") {
 		setlogmask(LOG_UPTO(LOG_ERR));
-		this->loglevel = loglevel;
+		this->log_level = log_level;
 	}
 	else {
+		logError("Invalid log_level in configuration!");
 		setlogmask(LOG_UPTO(LOG_INFO));
-		this->loglevel = "info";	
+		this->log_level = "info";
 	}
+	Logger::logInfo("Setting Loglevel to \'"+log_level+"\'");
 }
 
-void Logger::logInfo(string message) {
+void Logger::logInfo(string message){
+	return getInstance().instanceLogInfo(message);
+}
+
+void Logger::logNotice(string message){
+	return getInstance().instanceLogNotice(message);
+}
+
+void Logger::logDebug(string message){
+	return getInstance().instanceLogDebug(message);
+}
+
+void Logger::logError(string message){
+	return getInstance().instanceLogError(message);
+}
+
+void Logger::instanceLogInfo(string message) {
+	log_message = "INFO: " + message;
 	openlog(daemon_name, 0, LOG_DAEMON);
-	syslog(LOG_INFO, message.c_str());
+	syslog(LOG_INFO, log_message.c_str());
 	closelog();
 }
 
-void Logger::logNotice(string message) {
+void Logger::instanceLogNotice(string message) {
+	log_message = "NOTICE: " + message;
 	openlog(daemon_name, 0, LOG_DAEMON);
-	syslog(LOG_NOTICE, message.c_str());
+	syslog(LOG_NOTICE, log_message.c_str());
 	closelog();
 }
 
-void Logger::logError(string message) {
+void Logger::instanceLogDebug(string message) {
+	log_message = "DEBUG: " + message;
 	openlog(daemon_name, 0, LOG_DAEMON);
-	syslog(LOG_PERROR, message.c_str());
+	syslog(LOG_DEBUG, log_message.c_str());
 	closelog();
 }
 
-void Logger::logDebug(string message) {
+void Logger::instanceLogError(string message) {
+	log_message = "ERROR: " + message;
 	openlog(daemon_name, 0, LOG_DAEMON);
-	syslog(LOG_DEBUG, message.c_str());
+	syslog(LOG_ERR, log_message.c_str());
 	closelog();
+}
+
+void Logger::setDaemonName(const char* daemon_name){
+	getInstance().daemon_name = daemon_name;
 }

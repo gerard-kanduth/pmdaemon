@@ -7,7 +7,7 @@
 using namespace std;
 
 // name of the daemon
-const char *daemon_name = "pmdaemon";
+const char* daemon_name = "pmdaemon";
 
 // logger instance (singleton-class)
 Logger Logger::logger_Instance;
@@ -22,22 +22,27 @@ int main() {
 
 	// initialize a singleton instance for the logger
 	Logger::getInstance();
+	Logger::setDaemonName(daemon_name);
 
 	// load the configuration file
 	settings = new Settings("/srv/process_monitoring_daemon/settings.conf");
 
 	// terminate if configuration is broken
 	if (!settings->configAvailable()){
-		Logger::getInstance().logError("Unable to load configuration! Stopping!");
+		Logger::logError("Unable to load configuration! Stopping!");
 		return 1;
 	}
+
+	// set the loglevel for the Logger
+	Logger::setLogLevel(settings->getLogLevel());
 
 	// load rules
 	rules = new Rules(settings->getRulesDir());
 
-	Logger::getInstance().logInfo("TEST");
-
-
+	Logger::logInfo("Starting "+std::string(daemon_name)+" monitoring ...");
+	Logger::logNotice("Notice TEST");
+	Logger::logDebug("Debug TEST");
+	Logger::logError("Error TEST");
 
 	return 0;
 }

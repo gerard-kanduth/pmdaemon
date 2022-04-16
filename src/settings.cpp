@@ -3,14 +3,14 @@
 
 Settings::Settings(const char *filename) {
 	this->filename = filename;
-	Logger::getInstance().logInfo(("Loading configuration file %s", this->filename));
+	Logger::logInfo("Loading configuration file " + std::string(this->filename));
 	this->config_success = readSettings();
 }
 
 bool Settings::readSettings() {
 	this->settings_file.open(this->filename, ios::in);
 	if (!this->settings_file) {
-		Logger::getInstance().logError(("Settings file %s is not present or readable!", this->filename));
+		Logger::logError("Settings file " + std::string(this->filename) + " is not present or readable!");
 		return false;
 	}
 	else {
@@ -37,13 +37,17 @@ void Settings::showSettings() {
 }
 
 string Settings::getLogLevel() {
-	if (settings["LOGLEVEL"] == "info" || 
-		settings["LOGLEVEL"] == "notice" || 
-		settings["LOGLEVEL"] == "debug" || 
-		settings["LOGLEVEL"] == "error")
+	if (settings["LOGLEVEL"] == "info" ||
+		settings["LOGLEVEL"] == "INFO" || 
+		settings["LOGLEVEL"] == "notice" ||
+		settings["LOGLEVEL"] == "NOTICE" ||
+		settings["LOGLEVEL"] == "debug" ||
+		settings["LOGLEVEL"] == "DEBUG" ||
+		settings["LOGLEVEL"] == "error" ||
+		settings["LOGLEVEL"] == "ERROR")
 		return settings["LOGLEVEL"];
 	else
-		return "info";
+		return "None";
 }
 
 string Settings::getRulesDir() {
