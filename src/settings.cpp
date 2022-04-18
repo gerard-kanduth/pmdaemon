@@ -1,9 +1,13 @@
 #include "settings.h"
 
-Settings::Settings(const char *filename) {
+Settings::Settings(const char* filename) {
 	this->filename = filename;
 	Logger::logInfo("Loading configuration file " + std::string(this->filename));
 	this->config_success = readSettings();
+}
+
+bool Settings::configAvailable() {
+	return this->config_success;
 }
 
 bool Settings::readSettings() {
@@ -26,13 +30,46 @@ bool Settings::readSettings() {
 	return true;
 }
 
-bool Settings::configAvailable() {
-	return this->config_success;
+bool Settings::getZombieTrigger() {
+	try {
+		int zombie_trigger = stoi(settings["ZOMBIE_TRIGGER"]);
+		if (std::floor(zombie_trigger) == zombie_trigger && zombie_trigger >= 0 && zombie_trigger <= 1) {
+			Logger::logInfo("Setting ZOMBIE_TRIGGER to \'" + to_string(zombie_trigger) + "\'");
+			if (zombie_trigger == 1)
+				return true;
+			else
+				return false;
+		}
+		else
+			throw 2;
+	} catch (...) {
+		Logger::logError("Invalid ZOMBIE_TRIGGER value in configuration! Using '0'.");
+		return false;
+	}
 }
 
-void Settings::showSettings() {
-	for (auto s : this->settings)
-		std::cout << s.first << "\t-> " << s.second << '\n';	
+double Settings::getCpuTriggerThreshold() {
+	try {
+		string ctt = settings["CPU_TRIGGER_THRESHOLD"];
+		double cpu_trigger_threshold = stod(ctt.c_str());
+		Logger::logInfo("Setting CPU_TRIGGER_THRESHOLD to \'" + to_string(cpu_trigger_threshold) + "\'");
+		return cpu_trigger_threshold;
+	} catch (...) {
+		Logger::logError("Invalid CPU_TRIGGER_THRESHOLD value in configuration! Using '90.0'.");
+		return 90.0;
+	}
+}
+
+double Settings::getMemTriggerThreshold() {
+	try {
+		string mtt = settings["MEM_TRIGGER_THRESHOLD"];
+		double mem_trigger_threshold = stod(mtt.c_str());
+		Logger::logInfo("Setting MEM_TRIGGER_THRESHOLD to \'" + to_string(mem_trigger_threshold) + "\'");
+		return mem_trigger_threshold;
+	} catch (...) {
+		Logger::logError("Invalid MEM_TRIGGER_THRESHOLD value in configuration! Using '50.0'.");
+		return 50.0;
+	}
 }
 
 int Settings::getCheckInterval() {
@@ -67,15 +104,10 @@ int Settings::getMaxErrors() {
 
 string Settings::getLogLevel() {
 	try {
-		if (settings["LOGLEVEL"] == "info" ||
-			settings["LOGLEVEL"] == "INFO" ||
-			settings["LOGLEVEL"] == "notice" ||
-			settings["LOGLEVEL"] == "NOTICE" ||
-			settings["LOGLEVEL"] == "debug" ||
-			settings["LOGLEVEL"] == "DEBUG" ||
-			settings["LOGLEVEL"] == "error" ||
-			settings["LOGLEVEL"] == "ERROR")
-				return settings["LOGLEVEL"];
+		string log_level = settings["LOGLEVEL"];
+		transform(log_level.begin(), log_level.end(), log_level.begin(), ::tolower);
+		if (log_level == "info" || log_level == "notice" || log_level == "debug" || log_level == "error")
+				return log_level;
 		else
 			throw 2;
 	} catch (...) {
@@ -94,4 +126,9 @@ string Settings::getRulesDir() {
 		Logger::logError("Invalid RULES_DIRECTORY value in configuration! Using '/etc/pmdaemon/rules.d'.");
 		return "/etc/pmdaemon/rules.d";
 	}
+}
+
+void Settings::showSettings() {
+	for (auto s : this->settings)
+		std::cout << s.first << "\t-> " << s.second << '\n';	
 }

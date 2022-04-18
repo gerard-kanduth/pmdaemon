@@ -5,7 +5,7 @@ CFLAGS=-g -std=c++17 -pedantic -Wall -Wextra -Werror -Wshadow -Wconversion -Wunr
 COMPILE=$(COMPILER) $(OPTIONS)
 BUILD=build
 LIBRARIES=-I include
-CPP_FILES=src/main.cpp src/settings.cpp src/rules.cpp src/logger.cpp
+CPP_FILES=src/main.cpp src/settings.cpp src/rules.cpp src/logger.cpp src/controller.cpp
 
 # Compile the main program
 all: clean build $(PROJECT_NAME)

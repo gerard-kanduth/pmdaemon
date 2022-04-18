@@ -4,13 +4,18 @@
 #include <set>
 #include <map>
 #include <cmath>
+#include <algorithm>
 #include "logger.h"
+
+#ifndef SETTINGS
+#define SETTINGS
 
 using namespace std;
 
 class Settings {
 
 	private:
+		bool config_success = false;
 		const set<string> available_settings {
 			"LOGLEVEL",
 			"MAX_ERRORS",
@@ -25,19 +30,23 @@ class Settings {
 			"GRAYLOG_URL",
 			"GRAYLOG_PORT"
 		};
-		map<string, string> settings;
-		fstream settings_file;
 		const char *filename;
 		const char *daemon_name;
-		bool config_success = false;
+		fstream settings_file;
+		map<string, string> settings;
 
 	public:
 		Settings(const char*);
-		void showSettings();
 		bool configAvailable();
 		bool readSettings();
+		bool getZombieTrigger();
+		double getCpuTriggerThreshold();
+		double getMemTriggerThreshold();
 		int getCheckInterval();
 		int getMaxErrors();
 		string getLogLevel();
 		string getRulesDir();
+		void showSettings();
 };
+
+#endif
