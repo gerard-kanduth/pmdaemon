@@ -28,6 +28,7 @@ class Logger {
 		static Logger& getInstance() {
 			return logger_Instance;
 		}
+		static string getLogLevel();
 		static void setLogLevel(string);
 		static void logInfo(string);
 		static void logNotice(string);

@@ -23,6 +23,7 @@ class Settings {
 			"CHECK_INTERVAL",
 			"SEND_PROCESS_FILES",
 			"CHECKS_BEFORE_ALERT",
+			"CHECKS_COOLDOWN",
 			"CPU_TRIGGER_THRESHOLD",
 			"MEM_TRIGGER_THRESHOLD",
 			"ZOMBIE_TRIGGER",
@@ -42,7 +43,9 @@ class Settings {
 		bool getZombieTrigger();
 		double getCpuTriggerThreshold();
 		double getMemTriggerThreshold();
+		int getChecksBeforeAlert();
 		int getCheckInterval();
+		int getChecksCooldown();
 		int getMaxErrors();
 		string getLogLevel();
 		string getRulesDir();

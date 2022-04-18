@@ -9,6 +9,8 @@ Controller::Controller(Settings*& settings) {
 	cpu_trigger_threshold = settings->getCpuTriggerThreshold();
 	mem_trigger_threshold = settings->getMemTriggerThreshold();
 	zombie_trigger = settings->getZombieTrigger();
+	checks_cooldown = settings->getChecksCooldown();
+	checks_before_alert = settings->getChecksBeforeAlert();
 
 	// load rules
 	rules = new Rules(settings->getRulesDir());
@@ -101,25 +103,58 @@ bool Controller::iterateProcessList(string check_result) {
 			current_process.comand = c_comand;
 
 			// check the current process
-			checkProcess(current_process);
+			checkProcess(&current_process);
 		}
 	} catch (...) {
 		Logger::logError("Something went wrong while iterating the process-list!");
 		return false;
 	}
-	return true;
-}
 
-bool Controller::checkProcess(Process process) {
-	if (process.pcpu > this->cpu_trigger_threshold) {
-		cout << "ALARM!!! "+process.comand+ " has a load of "+to_string(process.pcpu) << "\n";
+	// show the current penalty-list (debug-only)
+	if (Logger::getLogLevel() == "debug") {
+		for (it=penalty_list.begin(); it!=penalty_list.end(); ++it)
+			Logger::logDebug("PID: "+to_string(it->second.pid)+" Penalty_Counter: "+to_string(it->second.penalty_counter)+" Cooldown_Counter: "+to_string(it->second.cooldown_counter));
 	}
-	// cout << process.pid << "\n";
-	// cout << process.state << "\n";
-	// cout << process.user << "\n";
-	// cout << to_string(process.pcpu) << "\n";
-	// cout << to_string(process.pmem) << "\n";
-	// cout << process.comand << "\n";
 	return true;
 }
 
+bool Controller::checkProcess(Process* process) {
+	if (process->pcpu > this->cpu_trigger_threshold) {
+		Logger::logDebug("Process with PID "+to_string(process->pid)+ " has a load of "+to_string(process->pcpu));
+
+		// if pid is in penalty-list raise counter
+		it = penalty_list.find(process->pid);
+		if (it != penalty_list.end()) {
+			Logger::logDebug("Process with PID "+to_string(process->pid)+ " already on penalty-list.");
+			it->second.penalty_counter++;
+
+			// alert if not already alerted
+			if (it->second.penalty_counter >= checks_before_alert && it->second.alerted == false ) {
+				doAlert(process);
+				it->second.alerted = true;
+			}
+			// decrease cooldown-counter if already alerted
+			else {
+				// check if cooldown-counter not 0, otherwise remove pid from list
+				if (it->second.cooldown_counter > 0 && it->second.alerted == true)
+					it->second.cooldown_counter--;
+				else if (it->second.cooldown_counter <= 0)
+					penalty_list.erase(it);
+			}
+		}
+		// add the pid to the penalty-list if not found
+		else {
+			PenaltyListItem penalty_pid;
+			penalty_pid.pid = process->pid;
+			penalty_pid.penalty_counter = 1;
+			penalty_pid.cooldown_counter = checks_cooldown;
+			penalty_list[process->pid] = penalty_pid;
+			Logger::logDebug("Added "+to_string(process->pid)+" to penalty-list.");
+		}
+	}
+	return true;
+}
+
+void Controller::doAlert(Process* process) {
+	cout << "ALERT: "+to_string(process->pid)+" - "+process->comand+"\n";
+}

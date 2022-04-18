@@ -1,5 +1,6 @@
 #include <cctype>
 #include <iostream>
+#include <map>
 #include <sstream>
 #include <string>
 #include <unistd.h>
@@ -22,6 +23,18 @@ class Controller {
 			double pmem;
 			string comand;
 		} current_process;
+
+		// penalty list-item
+		struct PenaltyListItem {
+			int pid;
+			int penalty_counter;
+			int cooldown_counter;
+			bool alerted = false;
+		};
+
+		// penalty list
+		map<int,PenaltyListItem> penalty_list;
+		map<int,PenaltyListItem>::iterator it;
 
 		// settings object (contains all settings)
 		Settings* settings;
@@ -56,10 +69,13 @@ class Controller {
 		bool zombie_trigger;
 		double cpu_trigger_threshold;
 		double mem_trigger_threshold;
+		int checks_cooldown;
+		int checks_before_alert;
 
 	public:
 		Controller(Settings*&);
-		bool checkProcess(Process);
+		bool checkProcess(Process*);
+		void doAlert(Process*);
 		bool doCheck();
 		bool iterateProcessList(string);
 		

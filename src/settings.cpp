@@ -75,7 +75,7 @@ double Settings::getMemTriggerThreshold() {
 int Settings::getCheckInterval() {
 	try {
 		int check_interval = stoi(settings["CHECK_INTERVAL"]);
-		if (std::floor(check_interval) == check_interval) {
+		if (std::floor(check_interval) == check_interval && check_interval > 0) {
 			Logger::logInfo("Setting CHECK_INTERVAL to \'" + to_string(check_interval) + "\'");
 			return check_interval;
 		}
@@ -84,6 +84,36 @@ int Settings::getCheckInterval() {
 	} catch (...) {
 		Logger::logError("Invalid CHECK_INTERVAL value in configuration! Using '5' seconds.");
 		return 5;
+	}
+}
+
+int Settings::getChecksBeforeAlert() {
+	try {
+		int checks_before_alert = stoi(settings["CHECKS_BEFORE_ALERT"]);
+		if (std::floor(checks_before_alert) == checks_before_alert && checks_before_alert >= 0) {
+			Logger::logInfo("Setting CHECKS_BEFORE_ALERT to \'" + to_string(checks_before_alert) + "\'");
+			return checks_before_alert;
+		}
+		else
+			throw 2;
+	} catch (...) {
+		Logger::logError("Invalid CHECKS_BEFORE_ALERT value in configuration! Using '10'.");
+		return 10;
+	}
+}
+
+int Settings::getChecksCooldown() {
+	try {
+		int checks_cooldown = stoi(settings["CHECKS_COOLDOWN"]);
+		if (std::floor(checks_cooldown) == checks_cooldown && checks_cooldown >= 0) {
+			Logger::logInfo("Setting CHECKS_COOLDOWN to \'" + to_string(checks_cooldown) + "\'");
+			return checks_cooldown;
+		}
+		else
+			throw 2;
+	} catch (...) {
+		Logger::logError("Invalid CHECKS_COOLDOWN value in configuration! Using '50'.");
+		return 50;
 	}
 }
 

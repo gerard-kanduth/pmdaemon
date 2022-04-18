@@ -29,6 +29,10 @@ void Logger::instanceSetLogLevel(string log_level) {
 	Logger::logInfo("Setting LOGLEVEL to \'"+log_level+"\'");
 }
 
+string Logger::getLogLevel(){
+	return getInstance().log_level;
+}
+
 void Logger::logInfo(string message){
 	return getInstance().instanceLogInfo(message);
 }
