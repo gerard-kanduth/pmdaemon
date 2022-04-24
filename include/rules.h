@@ -10,6 +10,7 @@ using namespace std;
 class Rule {
 	
 	private:
+
 		const set<string> rule_settings {
 			"COMMAND",
 			"NO_CHECK",
@@ -20,21 +21,25 @@ class Rule {
 			"SEND_PROCESS_FILES",
 			"GRAYLOG_ENABLE"			
 		};
+
 		map<string, string> rules;
 		bool rule_success = false;
 
 	public:
+
 		Rule();
 };
 
 class Rules {
-	
+
 	private:
+
 		const char *rules_directory;
 		int rule_number = 0;
 		Rule rules[];
 
 	public:
+
 		Rules(string);
-	
+
 };

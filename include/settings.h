@@ -15,6 +15,7 @@ using namespace std;
 class Settings {
 
 	private:
+
 		bool config_success = false;
 		const set<string> available_settings {
 			"LOGLEVEL",
@@ -27,26 +28,37 @@ class Settings {
 			"CPU_TRIGGER_THRESHOLD",
 			"MEM_TRIGGER_THRESHOLD",
 			"ZOMBIE_TRIGGER",
-			"GRAYLOG_ENABLE",
-			"GRAYLOG_URL",
-			"GRAYLOG_PORT"
+			"GRAYLOG_ENABLED",
+			"GRAYLOG_TRANSFER_METHOD",
+			"GRAYLOG_FQDN",
+			"GRAYLOG_PORT",
+			"GRAYLOG_HTTP_SECURE",
+			"GRAYLOG_HTTP_PATH"
 		};
+
 		const char *filename;
 		const char *daemon_name;
 		fstream settings_file;
 		map<string, string> settings;
 
 	public:
+
 		Settings(const char*);
 		bool configAvailable();
 		bool readSettings();
+		bool getGraylogHTTPSecure();
+		bool getGraylogEnabled();
 		bool getZombieTrigger();
 		double getCpuTriggerThreshold();
 		double getMemTriggerThreshold();
 		int getChecksBeforeAlert();
 		int getCheckInterval();
 		int getChecksCooldown();
+		int getGraylogPort();
 		int getMaxErrors();
+		string getGraylogFQDN();
+		string getGraylogHTTPPath();
+		string getGraylogTransportMethod();
 		string getLogLevel();
 		string getRulesDir();
 		void showSettings();

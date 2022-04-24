@@ -9,12 +9,14 @@ using namespace std;
 
 // has to be singleton-class since used globally in all classes
 class Logger {
+
 	private:
+
 		static Logger logger_Instance;
 		string log_level;
 		string log_message;
 		const char *daemon_name;
-		
+
 		// no use of constructor - class is singleton
 		Logger(){}
 		void instanceSetLogLevel(string);
@@ -24,6 +26,7 @@ class Logger {
 		void instanceLogError(string);
 
 	public:
+
 		// only instance can be created
 		static Logger& getInstance() {
 			return logger_Instance;

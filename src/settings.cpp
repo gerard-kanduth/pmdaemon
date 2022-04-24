@@ -30,6 +30,42 @@ bool Settings::readSettings() {
 	return true;
 }
 
+bool Settings::getGraylogEnabled() {
+	try {
+		int graylog_enabled = stoi(settings["GRAYLOG_ENABLED"]);
+		if (std::floor(graylog_enabled) == graylog_enabled && graylog_enabled == 0 || graylog_enabled == 1) {
+			Logger::logInfo("Setting GRAYLOG_ENABLE to \'" + to_string(graylog_enabled) + "\'");
+			if (graylog_enabled == 1)
+				return true;
+			else
+				return false;
+		}
+		else
+			throw 2;
+	} catch (...) {
+		Logger::logError("Invalid GRAYLOG_ENABLED value in configuration! Using '0'.");
+		return false;
+	}
+}
+
+bool Settings::getGraylogHTTPSecure() {
+	try {
+		int graylog_http_secure = stoi(settings["GRAYLOG_HTTP_SECURE"]);
+		if (std::floor(graylog_http_secure) == graylog_http_secure && graylog_http_secure == 0 || graylog_http_secure == 1) {
+			Logger::logInfo("Setting GRAYLOG_HTTP_SECURE to \'" + to_string(graylog_http_secure) + "\'");
+			if (graylog_http_secure == 1)
+				return true;
+			else
+				return false;
+		}
+		else
+			throw 2;
+	} catch (...) {
+		Logger::logError("Invalid GRAYLOG_HTTP_SECURE value in configuration! Using '0'.");
+		return false;
+	}
+}
+
 bool Settings::getZombieTrigger() {
 	try {
 		int zombie_trigger = stoi(settings["ZOMBIE_TRIGGER"]);
@@ -69,6 +105,21 @@ double Settings::getMemTriggerThreshold() {
 	} catch (...) {
 		Logger::logError("Invalid MEM_TRIGGER_THRESHOLD value in configuration! Using '50.0'.");
 		return 50.0;
+	}
+}
+
+int Settings::getGraylogPort() {
+	try {
+		int graylog_port = stoi(settings["GRAYLOG_PORT"]);
+		if (std::floor(graylog_port) == graylog_port && graylog_port >= 0) {
+			Logger::logInfo("Setting GRAYLOG_PORT to \'" + to_string(graylog_port) + "\'");
+			return graylog_port;
+		}
+		else
+			throw 2;
+	} catch (...) {
+		Logger::logError("Invalid GRAYLOG_PORT value in configuration! Using '12201'.");
+		return 12201;
 	}
 }
 
@@ -129,6 +180,54 @@ int Settings::getMaxErrors() {
 	} catch (...) {
 		Logger::logError("Invalid MAX_ERRORS value in configuration! Using '10'.");
 		return 10;
+	}
+}
+
+string Settings::getGraylogFQDN() {
+	try {
+		string graylog_fqdn = settings["GRAYLOG_FQDN"];
+		transform(graylog_fqdn.begin(), graylog_fqdn.end(), graylog_fqdn.begin(), ::tolower);
+		if (graylog_fqdn != "") {
+			Logger::logInfo("Setting GRAYLOG_FQDN to \'" + graylog_fqdn + "\'");
+			return graylog_fqdn;
+		}
+		else
+			throw 2;
+	} catch (...) {
+		Logger::logError("Invalid GRAYLOG_FQDN value in configuration! Using 'localhost'.");
+		return "localhost";
+	}
+}
+
+string Settings::getGraylogHTTPPath() {
+	try {
+		string graylog_http_path = settings["GRAYLOG_HTTP_PATH"];
+		transform(graylog_http_path.begin(), graylog_http_path.end(), graylog_http_path.begin(), ::tolower);
+		if (graylog_http_path != "" && graylog_http_path.find('/') != std::string::npos) {
+			Logger::logInfo("Setting GRAYLOG_HTTP_PATH to \'" + graylog_http_path + "\'");
+			return graylog_http_path;
+		}
+		else
+			throw 2;
+	} catch (...) {
+		Logger::logError("Invalid GRAYLOG_HTTP_PATH value in configuration! Using '/gelf'.");
+		return "/gelf";
+	}
+}
+
+string Settings::getGraylogTransportMethod() {
+	try {
+		string graylog_transport_method = settings["GRAYLOG_TRANSFER_METHOD"];
+		transform(graylog_transport_method.begin(), graylog_transport_method.end(), graylog_transport_method.begin(), ::tolower);
+		if (graylog_transport_method == "http" || graylog_transport_method == "udp" || graylog_transport_method == "tcp") {
+			Logger::logInfo("Setting GRAYLOG_TRANSFER_METHOD to \'" + graylog_transport_method + "\'");
+			return graylog_transport_method;
+		}
+		else
+			throw 2;
+	} catch (...) {
+		Logger::logError("Invalid GRAYLOG_TRANSFER_METHOD value in configuration! Using 'http'.");
+		return "http";
 	}
 }
 

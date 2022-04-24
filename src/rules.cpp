@@ -7,5 +7,5 @@ Rules::Rules(string rules_directory) {
 }
 
 Rule::Rule() {
-	
+	// TODO
 }

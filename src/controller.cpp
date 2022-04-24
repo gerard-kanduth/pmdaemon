@@ -11,6 +11,20 @@ Controller::Controller(Settings*& settings) {
 	zombie_trigger = settings->getZombieTrigger();
 	checks_cooldown = settings->getChecksCooldown();
 	checks_before_alert = settings->getChecksBeforeAlert();
+	graylog_enabled = settings->getGraylogEnabled();
+	if (graylog_enabled) {
+		graylog_transport_method = settings->getGraylogTransportMethod();
+		graylog_port = settings->getGraylogPort();
+		graylog_fqdn = settings->getGraylogFQDN();
+		graylog_http_path = settings->getGraylogHTTPPath();
+		graylog_http_secure = settings->getGraylogHTTPSecure();
+		if (graylog_transport_method == "http") {
+			if (graylog_http_secure)
+				Logger::logInfo("Processes will be logged to https://"+graylog_fqdn+":"+to_string(graylog_port)+graylog_http_path);
+			else
+				Logger::logInfo("Processes will be logged to http://"+graylog_fqdn+":"+to_string(graylog_port)+graylog_http_path);
+		}
+	}
 
 	// load rules
 	rules = new Rules(settings->getRulesDir());
@@ -157,4 +171,27 @@ bool Controller::checkProcess(Process* process) {
 
 void Controller::doAlert(Process* process) {
 	cout << "ALERT: "+to_string(process->pid)+" - "+process->comand+"\n";
+	if (graylog_enabled) {
+		if (graylog_transport_method == "http") {
+			graylogHTTPAlert(process);
+		}
+		else if (graylog_transport_method == "udp") {
+			graylogUDPAlert(process);
+		}
+		else if (graylog_transport_method == "tcp") {
+			graylogTCPAlert(process);
+		}
+	}
+}
+
+void Controller::graylogHTTPAlert(Process* process) {
+	
+}
+
+void Controller::graylogUDPAlert(Process* process) {
+	// TODO
+}
+
+void Controller::graylogTCPAlert(Process* process) {
+	// TODO
 }

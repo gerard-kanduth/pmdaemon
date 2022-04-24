@@ -48,13 +48,13 @@ class Controller {
 		// additional buffer and pipe for reading output
 		array<char, 128> input_buffer;
 		string check_result;
-		
+
 		// number of failed checks
 		int error_checks = 0;
 
 		// max number of fails before daemon terminates
 		int max_errors;
-		
+
 		// helper variables
 		size_t next_semi_colon_pos;
 		string ps_line;
@@ -72,7 +72,22 @@ class Controller {
 		int checks_cooldown;
 		int checks_before_alert;
 
+		// graylog related variables
+		bool graylog_enabled;
+		bool graylog_http_secure;
+		int graylog_port;
+		string graylog_fqdn;
+		string graylog_http_path;
+		string graylog_transport_method;
+
+		// private functions
+		void graylogHTTPAlert(Process*);
+		void graylogUDPAlert(Process*);
+		void graylogTCPAlert(Process*);
+
 	public:
+
+		// public functions
 		Controller(Settings*&);
 		bool checkProcess(Process*);
 		void doAlert(Process*);
