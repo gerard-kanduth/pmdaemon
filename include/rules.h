@@ -8,7 +8,7 @@
 using namespace std;
 
 class Rule {
-	
+
 	private:
 
 		const set<string> rule_settings {

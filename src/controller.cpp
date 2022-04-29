@@ -3,6 +3,8 @@
 Controller::Controller(Settings*& settings) {
 	Logger::logInfo("Initializing the controller ...");
 	this->settings = settings;
+	gethostname(this->hostname_buffer, sizeof(this->hostname_buffer));
+	this->hostname = this->hostname_buffer;
 
 	// load needed settings
 	max_errors = settings->getMaxErrors();
@@ -12,22 +14,41 @@ Controller::Controller(Settings*& settings) {
 	checks_cooldown = settings->getChecksCooldown();
 	checks_before_alert = settings->getChecksBeforeAlert();
 	graylog_enabled = settings->getGraylogEnabled();
+
 	if (graylog_enabled) {
 		graylog_transport_method = settings->getGraylogTransportMethod();
 		graylog_port = settings->getGraylogPort();
 		graylog_fqdn = settings->getGraylogFQDN();
 		graylog_http_path = settings->getGraylogHTTPPath();
 		graylog_http_secure = settings->getGraylogHTTPSecure();
+
 		if (graylog_transport_method == "http") {
+
+			// setup the curl environment
+			// libcurl, see: https://curl.se/libcurl/c/curl_global_init.html
+			curl_global_init(CURL_GLOBAL_ALL);
+
 			if (graylog_http_secure)
-				Logger::logInfo("Processes will be logged to https://"+graylog_fqdn+":"+to_string(graylog_port)+graylog_http_path);
+				graylog_http_protocol_prefix = "https://";
 			else
-				Logger::logInfo("Processes will be logged to http://"+graylog_fqdn+":"+to_string(graylog_port)+graylog_http_path);
+				graylog_http_protocol_prefix = "http://";
+			graylog_final_url = graylog_http_protocol_prefix+graylog_fqdn+":"+to_string(graylog_port)+graylog_http_path;
+
+			Logger::logInfo("Processes will be logged to "+graylog_final_url);
 		}
 	}
 
 	// load rules
 	rules = new Rules(settings->getRulesDir());
+
+}
+
+Controller::~Controller() {
+	Logger::logInfo("Removing the controller ...");
+
+	// cleanup of curl environment
+	// libcurl, see: https://curl.se/libcurl/c/curl_global_cleanup.html
+	curl_global_cleanup();
 }
 
 bool Controller::doCheck() {
@@ -47,7 +68,7 @@ bool Controller::doCheck() {
 			check_result += input_buffer.data();
 		}
 
-		// close pipe and check the return-code (throw error if comand failed)
+		// close pipe and check the return-code (throw error if command failed)
 		auto return_code = pclose(pipe);
 		if (return_code != 0)
 			throw 1;
@@ -58,7 +79,7 @@ bool Controller::doCheck() {
 
 	// catch if an error occurs during check-cycle
 	} catch (...) {
-		Logger::logError("Unable to run PS comand!");
+		Logger::logError("Unable to run PS command!");
 		error_checks++;
 
 		// terminate if number of failed checks exceeded
@@ -111,10 +132,10 @@ bool Controller::iterateProcessList(string check_result) {
 			ps_line = ps_line.substr(next_semi_colon_pos + 1);
 			current_process.pmem = stod(c_pmem);
 
-			// retrieve the comand
+			// retrieve the command
 			next_semi_colon_pos = ps_line.find("\n");
-			c_comand = ps_line.substr(0,next_semi_colon_pos);
-			current_process.comand = c_comand;
+			c_command = ps_line.substr(0,next_semi_colon_pos);
+			current_process.command = c_command;
 
 			// check the current process
 			checkProcess(&current_process);
@@ -144,7 +165,7 @@ bool Controller::checkProcess(Process* process) {
 
 			// alert if not already alerted
 			if (it->second.penalty_counter >= checks_before_alert && it->second.alerted == false ) {
-				doAlert(process);
+				doAlert(collectProcessInfo(process));
 				it->second.alerted = true;
 			}
 			// decrease cooldown-counter if already alerted
@@ -169,29 +190,106 @@ bool Controller::checkProcess(Process* process) {
 	return true;
 }
 
-void Controller::doAlert(Process* process) {
-	cout << "ALERT: "+to_string(process->pid)+" - "+process->comand+"\n";
+Controller::ProcessInfo Controller::collectProcessInfo(Process* process) {
+	ProcessInfo process_info;
+	try {
+		process_info._pid = process->pid;
+		process_info._pcpu = process->pcpu;
+		process_info._pmem = process->pmem;
+		process_info._command = process->command;
+
+		// read /proc/<pid>/status
+		std::ifstream proc_status("/proc/"+to_string(process->pid)+"/status");
+		if ( proc_status.is_open() ) {
+			string line;
+			while(getline(proc_status, line)){
+				process_info._status += line+"\n";
+			}
+		}
+		proc_status.close();
+
+	} catch (...) {
+		Logger::logError("Unable to get process-information for PID "+to_string(process->pid));
+	}
+	return process_info;
+}
+
+void Controller::doAlert(ProcessInfo process_info) {
+	cout << "ALERT: "+to_string(process_info._pid)+" - "+process_info._command+"\n";
 	if (graylog_enabled) {
 		if (graylog_transport_method == "http") {
-			graylogHTTPAlert(process);
+			graylogHTTPAlert(process_info);
 		}
 		else if (graylog_transport_method == "udp") {
-			graylogUDPAlert(process);
+			graylogUDPAlert(process_info);
 		}
 		else if (graylog_transport_method == "tcp") {
-			graylogTCPAlert(process);
+			graylogTCPAlert(process_info);
 		}
 	}
 }
 
-void Controller::graylogHTTPAlert(Process* process) {
-	
+void Controller::graylogHTTPAlert(ProcessInfo process_info) {
+	string json_data = "{ "
+		"\"version\": \""+to_string(graylog_message_version)+"\", "
+		"\"host\": \""+std::string(hostname)+"\", "
+		"\"short_message\": \"Process "+process_info._command+" with PID "+to_string(process_info._pid)+" is using too much ressources!\", "
+		"\"level\": "+to_string(graylog_message_level)+", "
+		"\"_pid\": "+to_string(process_info._pid)+", "
+		"\"_pcpu\": "+to_string(process_info._pcpu)+", "
+		"\"_pmem\": "+to_string(process_info._pmem)+", "
+		"\"_status\": \""+std::string(process_info._status)+"\", "
+		"\"_command\": \""+process_info._command+"\" }";
+	curlPostJSON(json_data.c_str());
 }
 
-void Controller::graylogUDPAlert(Process* process) {
+void Controller::graylogUDPAlert(ProcessInfo process_info) {
 	// TODO
 }
 
-void Controller::graylogTCPAlert(Process* process) {
+void Controller::graylogTCPAlert(ProcessInfo process_info) {
 	// TODO
+}
+
+bool Controller::curlPostJSON(const char* json_data) {
+
+	// create a curl handle
+	// libcurl, see: https://curl.se/libcurl/c/curl_easy_init.html
+	curl = curl_easy_init();
+
+	if (curl) {
+
+		// headers with mime-type for the curl posts
+		// libcurl, see: https://curl.se/libcurl/c/curl_slist_append.html
+		struct curl_slist *headers = NULL;
+		headers = curl_slist_append(headers, "Accept: application/json");
+		headers = curl_slist_append(headers, "Content-Type: application/json");
+		headers = curl_slist_append(headers, "charset: utf-8");
+
+		// set all needed options for the curl post
+		// libcurl, see: https://curl.se/libcurl/c/curl_easy_setopt.html
+		curl_easy_setopt(curl, CURLOPT_TIMEOUT, 20);
+		curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 20);
+		curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+		curl_easy_setopt(curl, CURLOPT_URL, graylog_final_url.c_str());
+		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_data);
+
+		// send the post and retrieve result
+		// libcurl, see: https://curl.se/libcurl/c/curl_easy_perform.html
+		curl_result = curl_easy_perform(curl);
+
+		// check if the post was successful
+		if (curl_result != CURLE_OK) {
+			Logger::logError("Unable to perform a POST request to "+graylog_final_url);
+			fprintf(stderr, "libcurl: Unable to post: %s\n", curl_easy_strerror(curl_result));
+			return false;
+		}
+
+		// cleanup after post
+		// libcurl, see: https://curl.se/libcurl/c/curl_easy_cleanup.html
+		curl_slist_free_all(headers);
+		curl_easy_cleanup(curl);
+	}
+
+	return true;
 }
