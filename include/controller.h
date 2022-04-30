@@ -41,6 +41,10 @@ class Controller {
 			double _pmem;
 			string _command;
 			string _status;
+			string _io;
+			string _limits;
+			string _syscall;
+			string _cgroup;
 		};
 
 		// penalty list
@@ -109,6 +113,7 @@ class Controller {
 		// private functions
 		ProcessInfo collectProcessInfo(Process*);
 		bool curlPostJSON(const char*);
+		string readProcFile(string, int*);
 		void graylogHTTPAlert(ProcessInfo);
 		void graylogUDPAlert(ProcessInfo);
 		void graylogTCPAlert(ProcessInfo);

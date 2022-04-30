@@ -192,26 +192,46 @@ bool Controller::checkProcess(Process* process) {
 
 Controller::ProcessInfo Controller::collectProcessInfo(Process* process) {
 	ProcessInfo process_info;
-	try {
-		process_info._pid = process->pid;
-		process_info._pcpu = process->pcpu;
-		process_info._pmem = process->pmem;
-		process_info._command = process->command;
+	process_info._pid = process->pid;
+	process_info._pcpu = process->pcpu;
+	process_info._pmem = process->pmem;
+	process_info._command = process->command;
 
-		// read /proc/<pid>/status
-		std::ifstream proc_status("/proc/"+to_string(process->pid)+"/status");
-		if ( proc_status.is_open() ) {
+	// read /proc/<pid>/status
+	process_info._status = readProcFile("status", &process->pid);
+
+	// read /proc/<pid>/io
+	process_info._io = readProcFile("io", &process->pid);
+
+	// read /proc/<pid>/limits
+	process_info._limits = readProcFile("limits", &process->pid);
+
+	// read /proc/<pid>/syscall
+	process_info._syscall = readProcFile("syscall", &process->pid);
+
+	// read /proc/<pid>/cgroup
+	process_info._cgroup = readProcFile("cgroup", &process->pid);
+
+	return process_info;
+}
+
+// used to read pseudo-files from /proc/<pid>/ - see https://linux.die.net/man/5/proc
+string Controller::readProcFile(string filename, int* pid) {
+	try {
+		string proc_file_content;
+		std::ifstream proc_file("/proc/"+to_string(*pid)+"/"+filename);
+		if ( proc_file.is_open() ) {
 			string line;
-			while(getline(proc_status, line)){
-				process_info._status += line+"\n";
+			while(getline(proc_file, line)){
+				proc_file_content += line+"\n";
 			}
 		}
-		proc_status.close();
-
+		proc_file.close();
+		return proc_file_content;
 	} catch (...) {
-		Logger::logError("Unable to get process-information for PID "+to_string(process->pid));
+		Logger::logError("Unable to read from /proc/"+to_string(*pid)+"/"+filename);
+		return "no data";
 	}
-	return process_info;
 }
 
 void Controller::doAlert(ProcessInfo process_info) {
@@ -238,7 +258,11 @@ void Controller::graylogHTTPAlert(ProcessInfo process_info) {
 		"\"_pid\": "+to_string(process_info._pid)+", "
 		"\"_pcpu\": "+to_string(process_info._pcpu)+", "
 		"\"_pmem\": "+to_string(process_info._pmem)+", "
-		"\"_status\": \""+std::string(process_info._status)+"\", "
+		"\"_status\": \""+process_info._status+"\", "
+		"\"_io\": \""+process_info._io+"\", "
+		"\"_limits\": \""+process_info._limits+"\", "
+		"\"_syscall\": \""+process_info._syscall+"\", "
+		"\"_cgroup\": \""+process_info._cgroup+"\", "
 		"\"_command\": \""+process_info._command+"\" }";
 	curlPostJSON(json_data.c_str());
 }
