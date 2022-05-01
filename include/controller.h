@@ -47,6 +47,7 @@ class Controller {
 			string _syscall;
 			string _cgroup;
 			string _cause;
+			string _state;
 		};
 
 		// penalty list
@@ -92,7 +93,7 @@ class Controller {
 		string c_command;
 
 		// default limits (if no specific rule is set for process)
-		bool zombie_trigger;
+		bool state_trigger;
 		double cpu_trigger_threshold;
 		double mem_trigger_threshold;
 		int checks_cooldown;

@@ -10,7 +10,7 @@ Controller::Controller(Settings*& settings) {
 	max_errors = settings->getMaxErrors();
 	cpu_trigger_threshold = settings->getCpuTriggerThreshold();
 	mem_trigger_threshold = settings->getMemTriggerThreshold();
-	zombie_trigger = settings->getZombieTrigger();
+	state_trigger = settings->getStateTrigger();
 	checks_cooldown = settings->getChecksCooldown();
 	checks_before_alert = settings->getChecksBeforeAlert();
 	graylog_enabled = settings->getGraylogEnabled();
@@ -148,7 +148,8 @@ bool Controller::iterateProcessList(string check_result) {
 	// show the current penalty-list (debug-only)
 	if (Logger::getLogLevel() == "debug") {
 		for (it=penalty_list.begin(); it!=penalty_list.end(); ++it)
-			Logger::logDebug("PID: "+to_string(it->second.pid)+" Penalty_Counter: "+to_string(it->second.penalty_counter)+" Cooldown_Counter: "+to_string(it->second.cooldown_counter));
+			if (it->second.penalty_cause != "zombie" && it->second.penalty_cause != "dstate")
+				Logger::logDebug("PID: "+to_string(it->second.pid)+" Penalty_Counter: "+to_string(it->second.penalty_counter)+" Cooldown_Counter: "+to_string(it->second.cooldown_counter));
 	}
 	return true;
 }
@@ -169,8 +170,13 @@ bool Controller::checkProcess(Process* process) {
 	}
 
 	if (process->state == "Z") {
-		Logger::logDebug("Process with PID "+to_string(process->pid)+ " has changed it's state to ZOMBIE");
+		Logger::logDebug("Process with PID "+to_string(process->pid)+ " state changed to ZOMBIE ("+process->state+")");
 		return checkPenaltyList(process, "zombie");
+	}
+
+	if (process->state == "D" || process->state == "D+") {
+		Logger::logDebug("Process with PID "+to_string(process->pid)+ " state changed to UNINTERRUPTIBLE SLEEP ("+process->state+")");
+		return checkPenaltyList(process, "dstate");
 	}
 
 	return true;
@@ -193,7 +199,7 @@ bool Controller::checkPenaltyList(Process* process, string penalty_cause) {
 		// decrease cooldown-counter if already alerted
 		else {
 			// check if cooldown-counter not 0, otherwise remove pid from list
-			if (it->second.penalty_cause != "zombie") {
+			if (it->second.penalty_cause != "zombie" && it->second.penalty_cause != "dstate") {
 				if (it->second.cooldown_counter > 0 && it->second.alerted == true)
 					it->second.cooldown_counter--;
 				else if (it->second.cooldown_counter <= 0)
@@ -219,6 +225,7 @@ Controller::ProcessInfo Controller::collectProcessInfo(Process* process, string 
 	ProcessInfo process_info;
 	process_info._cause = penalty_cause;
 	process_info._pid = process->pid;
+	process_info._state = process->state;
 	process_info._pcpu = process->pcpu;
 	process_info._pmem = process->pmem;
 	process_info._command = process->command;
@@ -285,6 +292,8 @@ void Controller::graylogHTTPAlert(ProcessInfo process_info) {
 		short_message = "Process with PID "+to_string(process_info._pid)+" is using "+to_string(process_info._pmem)+" of RAM!";
 	else if (process_info._cause == "zombie")
 		short_message = "Process with PID "+to_string(process_info._pid)+" has changed the state to ZOMBIE!";
+	else if (process_info._cause == "dstate")
+		short_message = "Process with PID "+to_string(process_info._pid)+" has changed the state to UNINTERRUPTIBLE SLEEP!";
 	else
 		short_message = "No short-message!";
 
@@ -302,6 +311,7 @@ void Controller::graylogHTTPAlert(ProcessInfo process_info) {
 		"\"_syscall\": \""+process_info._syscall+"\", "
 		"\"_cgroup\": \""+process_info._cgroup+"\", "
 		"\"_cause\": \""+process_info._cause+"\", "
+		"\"_state\": \""+process_info._state+"\", "
 		"\"_command\": \""+process_info._command+"\" }";
 	curlPostJSON(json_data.c_str());
 }

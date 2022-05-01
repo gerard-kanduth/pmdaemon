@@ -66,12 +66,12 @@ bool Settings::getGraylogHTTPSecure() {
 	}
 }
 
-bool Settings::getZombieTrigger() {
+bool Settings::getStateTrigger() {
 	try {
-		int zombie_trigger = stoi(settings["ZOMBIE_TRIGGER"]);
-		if (std::floor(zombie_trigger) == zombie_trigger && zombie_trigger >= 0 && zombie_trigger <= 1) {
-			Logger::logInfo("Setting ZOMBIE_TRIGGER to \'" + to_string(zombie_trigger) + "\'");
-			if (zombie_trigger == 1)
+		int state_trigger = stoi(settings["STATE_TRIGGER"]);
+		if (std::floor(state_trigger) == state_trigger && state_trigger >= 0 && state_trigger <= 1) {
+			Logger::logInfo("Setting STATE_TRIGGER to \'" + to_string(state_trigger) + "\'");
+			if (state_trigger == 1)
 				return true;
 			else
 				return false;
@@ -79,7 +79,7 @@ bool Settings::getZombieTrigger() {
 		else
 			throw 2;
 	} catch (...) {
-		Logger::logError("Invalid ZOMBIE_TRIGGER value in configuration! Using '0'.");
+		Logger::logError("Invalid STATE_TRIGGER value in configuration! Using '0'.");
 		return false;
 	}
 }

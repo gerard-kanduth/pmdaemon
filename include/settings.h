@@ -27,7 +27,7 @@ class Settings {
 			"CHECKS_COOLDOWN",
 			"CPU_TRIGGER_THRESHOLD",
 			"MEM_TRIGGER_THRESHOLD",
-			"ZOMBIE_TRIGGER",
+			"STATE_TRIGGER",
 			"GRAYLOG_ENABLED",
 			"GRAYLOG_TRANSFER_METHOD",
 			"GRAYLOG_FQDN",
@@ -48,7 +48,7 @@ class Settings {
 		bool readSettings();
 		bool getGraylogHTTPSecure();
 		bool getGraylogEnabled();
-		bool getZombieTrigger();
+		bool getStateTrigger();
 		double getCpuTriggerThreshold();
 		double getMemTriggerThreshold();
 		int getChecksBeforeAlert();
