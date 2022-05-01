@@ -31,6 +31,7 @@ class Controller {
 			int pid;
 			int penalty_counter;
 			int cooldown_counter;
+			string penalty_cause;
 			bool alerted = false;
 		};
 
@@ -45,6 +46,7 @@ class Controller {
 			string _limits;
 			string _syscall;
 			string _cgroup;
+			string _cause;
 		};
 
 		// penalty list
@@ -111,8 +113,9 @@ class Controller {
 		int graylog_message_level = 1;
 
 		// private functions
-		ProcessInfo collectProcessInfo(Process*);
+		ProcessInfo collectProcessInfo(Process*, string);
 		bool curlPostJSON(const char*);
+		bool checkPenaltyList(Process*, string);
 		string readProcFile(string, int*);
 		void graylogHTTPAlert(ProcessInfo);
 		void graylogUDPAlert(ProcessInfo);

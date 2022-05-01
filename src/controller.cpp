@@ -154,44 +154,70 @@ bool Controller::iterateProcessList(string check_result) {
 }
 
 bool Controller::checkProcess(Process* process) {
+
+	// TODO
+	/* Override threshold with specific rule for this specific process (if available) */
+
 	if (process->pcpu > this->cpu_trigger_threshold) {
 		Logger::logDebug("Process with PID "+to_string(process->pid)+ " has a load of "+to_string(process->pcpu));
+		return checkPenaltyList(process, "cpu");
+	}
 
-		// if pid is in penalty-list raise counter
-		it = penalty_list.find(process->pid);
-		if (it != penalty_list.end()) {
-			Logger::logDebug("Process with PID "+to_string(process->pid)+ " already on penalty-list.");
-			it->second.penalty_counter++;
+	if (process->pmem > this->mem_trigger_threshold) {
+		Logger::logDebug("Process with PID "+to_string(process->pid)+ " uses "+to_string(process->pmem)+" of RAM");
+		return checkPenaltyList(process, "mem");
+	}
 
-			// alert if not already alerted
-			if (it->second.penalty_counter >= checks_before_alert && it->second.alerted == false ) {
-				doAlert(collectProcessInfo(process));
-				it->second.alerted = true;
-			}
-			// decrease cooldown-counter if already alerted
-			else {
-				// check if cooldown-counter not 0, otherwise remove pid from list
+	if (process->state == "Z") {
+		Logger::logDebug("Process with PID "+to_string(process->pid)+ " has changed it's state to ZOMBIE");
+		return checkPenaltyList(process, "zombie");
+	}
+
+	return true;
+
+}
+
+// check if PID is on penalty-list, if not add it
+bool Controller::checkPenaltyList(Process* process, string penalty_cause) {
+	// if pid is in penalty-list raise counter
+	it = penalty_list.find(process->pid);
+	if (it != penalty_list.end() && it->second.penalty_cause == penalty_cause) {
+		Logger::logDebug("Process with PID "+to_string(process->pid)+" already on penalty-list.");
+		it->second.penalty_counter++;
+
+		// alert if not already alerted
+		if (it->second.penalty_counter >= checks_before_alert && it->second.alerted == false ) {
+			doAlert(collectProcessInfo(process, penalty_cause));
+			it->second.alerted = true;
+		}
+		// decrease cooldown-counter if already alerted
+		else {
+			// check if cooldown-counter not 0, otherwise remove pid from list
+			if (it->second.penalty_cause != "zombie") {
 				if (it->second.cooldown_counter > 0 && it->second.alerted == true)
 					it->second.cooldown_counter--;
 				else if (it->second.cooldown_counter <= 0)
 					penalty_list.erase(it);
 			}
 		}
-		// add the pid to the penalty-list if not found
-		else {
-			PenaltyListItem penalty_pid;
-			penalty_pid.pid = process->pid;
-			penalty_pid.penalty_counter = 1;
-			penalty_pid.cooldown_counter = checks_cooldown;
-			penalty_list[process->pid] = penalty_pid;
-			Logger::logDebug("Added "+to_string(process->pid)+" to penalty-list.");
-		}
+	}
+	// add the pid to the penalty-list if not found
+	else {
+		PenaltyListItem penalty_pid;
+		penalty_pid.pid = process->pid;
+		penalty_pid.penalty_counter = 1;
+		penalty_pid.cooldown_counter = checks_cooldown;
+		penalty_pid.penalty_cause = penalty_cause;
+		penalty_list[process->pid] = penalty_pid;
+		Logger::logDebug("Added "+to_string(process->pid)+" to penalty-list due to "+penalty_cause+".");
 	}
 	return true;
 }
 
-Controller::ProcessInfo Controller::collectProcessInfo(Process* process) {
+// collect information about the process
+Controller::ProcessInfo Controller::collectProcessInfo(Process* process, string penalty_cause) {
 	ProcessInfo process_info;
+	process_info._cause = penalty_cause;
 	process_info._pid = process->pid;
 	process_info._pcpu = process->pcpu;
 	process_info._pmem = process->pmem;
@@ -235,7 +261,7 @@ string Controller::readProcFile(string filename, int* pid) {
 }
 
 void Controller::doAlert(ProcessInfo process_info) {
-	cout << "ALERT: "+to_string(process_info._pid)+" - "+process_info._command+"\n";
+	cout << "[[ ALERT ]] PID: "+to_string(process_info._pid)+" COMMAND: "+process_info._command+" CAUSE: "+process_info._cause+"\n";
 	if (graylog_enabled) {
 		if (graylog_transport_method == "http") {
 			graylogHTTPAlert(process_info);
@@ -249,11 +275,23 @@ void Controller::doAlert(ProcessInfo process_info) {
 	}
 }
 
+// define which data should be included into the json_data
 void Controller::graylogHTTPAlert(ProcessInfo process_info) {
+
+	string short_message;
+	if (process_info._cause == "cpu")
+		short_message = "Process with PID "+to_string(process_info._pid)+" produces a load of "+to_string(process_info._pcpu)+"!";
+	else if (process_info._cause == "mem")
+		short_message = "Process with PID "+to_string(process_info._pid)+" is using "+to_string(process_info._pmem)+" of RAM!";
+	else if (process_info._cause == "zombie")
+		short_message = "Process with PID "+to_string(process_info._pid)+" has changed the state to ZOMBIE!";
+	else
+		short_message = "No short-message!";
+
 	string json_data = "{ "
 		"\"version\": \""+to_string(graylog_message_version)+"\", "
 		"\"host\": \""+std::string(hostname)+"\", "
-		"\"short_message\": \"Process "+process_info._command+" with PID "+to_string(process_info._pid)+" is using too much ressources!\", "
+		"\"short_message\": \""+short_message+"\", "
 		"\"level\": "+to_string(graylog_message_level)+", "
 		"\"_pid\": "+to_string(process_info._pid)+", "
 		"\"_pcpu\": "+to_string(process_info._pcpu)+", "
@@ -263,6 +301,7 @@ void Controller::graylogHTTPAlert(ProcessInfo process_info) {
 		"\"_limits\": \""+process_info._limits+"\", "
 		"\"_syscall\": \""+process_info._syscall+"\", "
 		"\"_cgroup\": \""+process_info._cgroup+"\", "
+		"\"_cause\": \""+process_info._cause+"\", "
 		"\"_command\": \""+process_info._command+"\" }";
 	curlPostJSON(json_data.c_str());
 }
