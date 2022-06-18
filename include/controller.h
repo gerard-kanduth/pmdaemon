@@ -10,6 +10,11 @@
 #include "rules.h"
 #include "settings.h"
 
+#include <iostream>
+#include <iomanip>
+#include <cmath>
+#include <limits>
+
 using namespace std;
 
 class Controller {
@@ -91,6 +96,10 @@ class Controller {
 		string c_pcpu;
 		string c_pmem;
 		string c_command;
+
+		// used to limit trailing zeroes on measured values
+		char limit_pcpu[128];
+		char limit_pmem[128];
 
 		// default limits (if no specific rule is set for process)
 		bool state_trigger;

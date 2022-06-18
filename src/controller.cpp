@@ -285,11 +285,15 @@ void Controller::doAlert(ProcessInfo process_info) {
 // define which data should be included into the json_data
 void Controller::graylogHTTPAlert(ProcessInfo process_info) {
 
+	// remove trailing zeroes on measured values
+	sprintf(limit_pcpu, "%.2f", process_info._pcpu);
+	sprintf(limit_pmem, "%.2f", process_info._pmem);
+
 	string short_message;
 	if (process_info._cause == "cpu")
-		short_message = "Process with PID "+to_string(process_info._pid)+" produces a load of "+to_string(process_info._pcpu)+"!";
+		short_message = "Process with PID "+to_string(process_info._pid)+" produces a load of "+limit_pcpu+"!";
 	else if (process_info._cause == "mem")
-		short_message = "Process with PID "+to_string(process_info._pid)+" is using "+to_string(process_info._pmem)+" of RAM!";
+		short_message = "Process with PID "+to_string(process_info._pid)+" is using "+limit_pmem+" of RAM!";
 	else if (process_info._cause == "zombie")
 		short_message = "Process with PID "+to_string(process_info._pid)+" has changed the state to ZOMBIE!";
 	else if (process_info._cause == "dstate")
@@ -297,22 +301,26 @@ void Controller::graylogHTTPAlert(ProcessInfo process_info) {
 	else
 		short_message = "No short-message!";
 
-	string json_data = "{ "
-		"\"version\": \""+to_string(graylog_message_version)+"\", "
-		"\"host\": \""+std::string(hostname)+"\", "
-		"\"short_message\": \""+short_message+"\", "
-		"\"level\": "+to_string(graylog_message_level)+", "
-		"\"_pid\": "+to_string(process_info._pid)+", "
-		"\"_pcpu\": "+to_string(process_info._pcpu)+", "
-		"\"_pmem\": "+to_string(process_info._pmem)+", "
-		"\"_status\": \""+process_info._status+"\", "
-		"\"_io\": \""+process_info._io+"\", "
-		"\"_limits\": \""+process_info._limits+"\", "
-		"\"_syscall\": \""+process_info._syscall+"\", "
-		"\"_cgroup\": \""+process_info._cgroup+"\", "
-		"\"_cause\": \""+process_info._cause+"\", "
-		"\"_state\": \""+process_info._state+"\", "
-		"\"_command\": \""+process_info._command+"\" }";
+	// the json-body which will be send
+	string json_data = "{"
+		"\"version\": \""+to_string(graylog_message_version)+"\","
+		"\"host\": \""+std::string(hostname)+"\","
+		"\"short_message\": \""+short_message+"\","
+		"\"level\": "+to_string(graylog_message_level)+","
+		"\"_pid\": "+to_string(process_info._pid)+","
+		"\"_pcpu\": "+limit_pcpu+","
+		"\"_pmem\": "+to_string(process_info._pmem)+","
+		"\"_status\": \""+process_info._status+"\","
+		"\"_io\": \""+process_info._io+"\","
+		"\"_limits\": \""+process_info._limits+"\","
+		"\"_syscall\": \""+process_info._syscall+"\","
+		"\"_cgroup\": \""+process_info._cgroup+"\","
+		"\"_cause\": \""+process_info._cause+"\","
+		"\"_state\": \""+process_info._state+"\","
+		"\"_command\": \""+process_info._command+"\"" 
+		"}";
+
+	// send it via curl library command
 	curlPostJSON(json_data.c_str());
 }
 
