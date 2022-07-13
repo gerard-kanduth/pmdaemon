@@ -17,6 +17,6 @@ $(PROJECT_NAME):
 build:
 	mkdir -p $(BUILD)
 
-# Cleanup of previous buildsi and binary file
+# Cleanup of previous builds and binary file
 clean:
 	rm -rf $(BUILD)
