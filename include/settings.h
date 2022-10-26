@@ -21,6 +21,7 @@ class Settings {
 			"LOGLEVEL",
 			"MAX_ERRORS",
 			"RULES_DIRECTORY",
+			"LOAD_RULES",
 			"CHECK_INTERVAL",
 			"SEND_PROCESS_FILES",
 			"CHECKS_BEFORE_ALERT",
@@ -49,6 +50,7 @@ class Settings {
 		bool getGraylogHTTPSecure();
 		bool getGraylogEnabled();
 		bool getStateTrigger();
+		bool getLoadRules();
 		double getCpuTriggerThreshold();
 		double getMemTriggerThreshold();
 		int getChecksBeforeAlert();

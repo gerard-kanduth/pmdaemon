@@ -69,7 +69,7 @@ bool Settings::getGraylogHTTPSecure() {
 bool Settings::getStateTrigger() {
 	try {
 		int state_trigger = stoi(settings["STATE_TRIGGER"]);
-		if (std::floor(state_trigger) == state_trigger && state_trigger >= 0 && state_trigger <= 1) {
+		if (std::floor(state_trigger) == state_trigger && state_trigger == 0 || state_trigger == 1) {
 			Logger::logInfo("Setting STATE_TRIGGER to \'" + to_string(state_trigger) + "\'");
 			if (state_trigger == 1)
 				return true;
@@ -84,11 +84,32 @@ bool Settings::getStateTrigger() {
 	}
 }
 
+bool Settings::getLoadRules() {
+	try {
+		int load_rules = stoi(settings["LOAD_RULES"]);
+		if (std::floor(load_rules) == load_rules && load_rules == 0 || load_rules == 1) {
+			Logger::logInfo("Setting LOAD_RULES to \'" + to_string(load_rules) + "\'");
+			if (load_rules == 1)
+				return true;
+			else
+				return false;
+		}
+		else
+			throw 2;
+	} catch (...) {
+		Logger::logError("Invalid LOAD_RULES value in configuration! Using '0'.");
+		return false;
+	}
+}
+
 double Settings::getCpuTriggerThreshold() {
 	try {
 		string ctt = settings["CPU_TRIGGER_THRESHOLD"];
 		double cpu_trigger_threshold = stod(ctt.c_str());
-		Logger::logInfo("Setting CPU_TRIGGER_THRESHOLD to \'" + to_string(cpu_trigger_threshold) + "\'");
+		char buffer[6];
+		sprintf(buffer, "%.2f", cpu_trigger_threshold);
+		string cpu_trigger_threshold_string(buffer);
+		Logger::logInfo("Setting CPU_TRIGGER_THRESHOLD to \'" + cpu_trigger_threshold_string + "\'");
 		return cpu_trigger_threshold;
 	} catch (...) {
 		Logger::logError("Invalid CPU_TRIGGER_THRESHOLD value in configuration! Using '90.0'.");
@@ -100,7 +121,10 @@ double Settings::getMemTriggerThreshold() {
 	try {
 		string mtt = settings["MEM_TRIGGER_THRESHOLD"];
 		double mem_trigger_threshold = stod(mtt.c_str());
-		Logger::logInfo("Setting MEM_TRIGGER_THRESHOLD to \'" + to_string(mem_trigger_threshold) + "\'");
+		char buffer[6];
+		sprintf(buffer, "%.2f", mem_trigger_threshold);
+		string mem_trigger_threshold_string(buffer);
+		Logger::logInfo("Setting MEM_TRIGGER_THRESHOLD to \'" + mem_trigger_threshold_string + "\'");
 		return mem_trigger_threshold;
 	} catch (...) {
 		Logger::logError("Invalid MEM_TRIGGER_THRESHOLD value in configuration! Using '50.0'.");

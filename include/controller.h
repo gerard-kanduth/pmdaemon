@@ -103,6 +103,7 @@ class Controller {
 
 		// default limits (if no specific rule is set for process)
 		bool state_trigger;
+		bool load_rules;
 		double cpu_trigger_threshold;
 		double mem_trigger_threshold;
 		int checks_cooldown;

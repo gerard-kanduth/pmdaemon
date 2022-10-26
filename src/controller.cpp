@@ -14,6 +14,7 @@ Controller::Controller(Settings*& settings) {
 	checks_cooldown = settings->getChecksCooldown();
 	checks_before_alert = settings->getChecksBeforeAlert();
 	graylog_enabled = settings->getGraylogEnabled();
+	load_rules = settings->getLoadRules();
 
 	if (graylog_enabled) {
 		graylog_transport_method = settings->getGraylogTransportMethod();
@@ -39,7 +40,8 @@ Controller::Controller(Settings*& settings) {
 	}
 
 	// load rules
-	rules = new Rules(settings->getRulesDir());
+	if (load_rules)
+		rules = new Rules(settings);
 
 }
 
@@ -141,7 +143,7 @@ bool Controller::iterateProcessList(string check_result) {
 			checkProcess(&current_process);
 		}
 	} catch (...) {
-		Logger::logError("Something went wrong while iterating the process-list!");
+		Logger::logError("Something went wrong while iterating the process list!");
 		return false;
 	}
 
