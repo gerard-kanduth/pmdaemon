@@ -8,38 +8,15 @@
 #include <filesystem>
 #include "logger.h"
 #include "settings.h"
-
-namespace fs = std::filesystem;
-using namespace std;
-
-#ifndef RULE
-#define RULE
-
-class Rule {
-
-	private:
-
-		bool no_check = false;
-		bool freeze = false;
-		bool oom_kill_enabled = false;
-		bool pid_kill_enabled = false;
-		bool send_process_files = false;
-		double cpu_trigger_threshold;
-		double mem_trigger_threshold;
-		int checks_before_alert;
-		string command;
-
-	public:
-
-		Rule(Settings*&);
-};
-
-#endif
+#include "rule.h"
 
 #ifndef RULES
 #define RULES
 
-class Rules {
+namespace fs = std::filesystem;
+using namespace std;
+
+class RuleManager {
 
 	struct ruleReturn {
 		bool success;
@@ -56,8 +33,7 @@ class Rules {
 			"PID_KILL_ENABLED",
 			"SEND_PROCESS_FILES",
 			"CPU_TRIGGER_THRESHOLD",
-			"MEM_TRIGGER_THRESHOLD",
-			"CHECKS_BEFORE_ALERT"
+			"MEM_TRIGGER_THRESHOLD"
 		};
 
 		const set<string> mandatory_rule_settings {
@@ -71,14 +47,15 @@ class Rules {
 		map<string, Rule> rules;
 
 		ruleReturn readRuleFile(string);
+		bool registerRule(map<string, string>);
 		bool checkIfRuleIsValid(map<string, string>);
-		void loadRules(Settings*&);
+		void loadRules();
 		void generateRuleFromFile(string&);
 		void showRuleContent(map<string, string>);
 
 	public:
 
-		Rules(Settings*&);
+		RuleManager(Settings*&);
 };
 
 #endif

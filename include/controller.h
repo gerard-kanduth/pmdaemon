@@ -7,7 +7,7 @@
 #include <string>
 #include <unistd.h>
 #include "logger.h"
-#include "rules.h"
+#include "rulemanager.h"
 #include "settings.h"
 
 #include <iostream>
@@ -63,7 +63,7 @@ class Controller {
 		Settings* settings;
 
 		// rules object (contains all loaded rules)
-		Rules* rules;
+		RuleManager* rules;
 
 		// curl instance used for http logging
 		// libcurl, see: https://curl.se/libcurl

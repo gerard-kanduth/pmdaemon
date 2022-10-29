@@ -41,7 +41,7 @@ Controller::Controller(Settings*& settings) {
 
 	// load rules
 	if (load_rules)
-		rules = new Rules(settings);
+		rules = new RuleManager(settings);
 
 }
 
