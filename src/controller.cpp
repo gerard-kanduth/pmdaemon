@@ -54,7 +54,7 @@ Controller::~Controller() {
 }
 
 bool Controller::doCheck() {
-	Logger::logDebug("Checking processes ...");
+	Logger::logDebug("[ Checking processes ... ]");
 	try {
 
 		// create a pipe to read from stdin and stderr

@@ -3,7 +3,7 @@
 RuleManager::RuleManager(Settings*& settings) {
 	this->rules_directory = settings->getRulesDir().c_str();
 	Logger::logInfo("Loading available rules from " + std::string(this->rules_directory));
-	this->loadRules();
+	loadRules();
 }
 
 void RuleManager::loadRules() {
@@ -28,17 +28,17 @@ void RuleManager::generateRuleFromFile(string &filename) {
 		Logger::logError("Unable to read this file! Please have a look at this rule.");
 	}
 	else {
-		Logger::logInfo("Validating " +filename);
+		Logger::logInfo("  |-> Validating file ...");
 		if (checkIfRuleIsValid(file_content.rule)) {
 			showRuleContent(file_content.rule);
-			Logger::logInfo("Registering rule " +filename);
+			Logger::logInfo("  |-> Registering rule ...");
 			if (registerRule(file_content.rule))
-				Logger::logInfo("Done!");
+				Logger::logInfo("  '-> Done!");
 			else
-				Logger::logError("Unable to register rule! Error parsing rule settings.");
+				Logger::logError(" '-> Unable to register rule! Error parsing rule settings.");
 		}
 		else {
-			Logger::logError("Broken or incomplete rule! Skipping.");
+			Logger::logError(" '-> Broken or incomplete rule! Skipping.");
 			Logger::logDebug("Make sure all mandatory settings are present and correct datatypes are used.");
 		}
 	}
@@ -55,7 +55,7 @@ bool RuleManager::registerRule(map<string, string> file_content) {
 		rule.command = file_content["COMMAND"];
 		rule.cpu_trigger_threshold = stod(file_content["CPU_TRIGGER_THRESHOLD"]);
 		rule.mem_trigger_threshold = stod(file_content["MEM_TRIGGER_THRESHOLD"]);
-		
+
 		if (!file_content["CHECKS_BEFORE_ALERT"].empty())
 			rule.checks_before_alert = stoi(file_content["CHECKS_BEFORE_ALERT"]);
 
@@ -66,7 +66,7 @@ bool RuleManager::registerRule(map<string, string> file_content) {
 		(file_content["PID_KILL_ENABLED"] == "1") ? rule.pid_kill_enabled = true : rule.pid_kill_enabled = false;
 		(file_content["SEND_PROCESS_FILES"] == "1") ? rule.send_process_files = true : rule.send_process_files = false;
 
-		cout << rule.command << "\n";
+		// register this rule to the global rulemanager
 		this->rules.insert(std::pair<string, Rule>(rule.command, rule));
 
 		return true;
@@ -74,6 +74,7 @@ bool RuleManager::registerRule(map<string, string> file_content) {
 	} catch (...) {
 		return false;
 	}
+
 }
 
 bool RuleManager::checkIfRuleIsValid(map<string, string> file_content) {
