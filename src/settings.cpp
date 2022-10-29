@@ -281,6 +281,7 @@ string Settings::getRulesDir() {
 	}
 }
 
+// for debug purpose only
 void Settings::showSettings() {
 	for (auto s : this->settings)
 		std::cout << s.first << "\t-> " << s.second << '\n';	

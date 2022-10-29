@@ -1,15 +1,13 @@
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <dirent.h>
-#include <map>
 #include <set>
+#include <map>
 #include <iostream>
 #include <filesystem>
 #include "logger.h"
 #include "settings.h"
-
-#ifndef RULES
-#define RULES
 
 namespace fs = std::filesystem;
 using namespace std;
@@ -25,9 +23,10 @@ class Rule {
 		bool freeze = false;
 		bool oom_kill_enabled = false;
 		bool pid_kill_enabled = false;
-		double cpu_trigger_threashold;
-		double mem_trigger_threashold;
-		int check_before_alert;
+		bool send_process_files = false;
+		double cpu_trigger_threshold;
+		double mem_trigger_threshold;
+		int checks_before_alert;
 		string command;
 
 	public:
@@ -37,16 +36,45 @@ class Rule {
 
 #endif
 
+#ifndef RULES
+#define RULES
+
 class Rules {
+
+	struct ruleReturn {
+		bool success;
+		map<string, string> rule;
+	};
 
 	private:
 
-		string rules_directory;
-		int rule_number = 0;
-		Rule** rules;
+		const set<string> available_rule_settings {
+			"COMMAND",
+			"NO_CHECK",
+			"FREEZE",
+			"OOM_KILL_ENABLED",
+			"PID_KILL_ENABLED",
+			"SEND_PROCESS_FILES",
+			"CPU_TRIGGER_THRESHOLD",
+			"MEM_TRIGGER_THRESHOLD",
+			"CHECKS_BEFORE_ALERT"
+		};
 
+		const set<string> mandatory_rule_settings {
+			"COMMAND",
+			"CPU_TRIGGER_THRESHOLD",
+			"MEM_TRIGGER_THRESHOLD"
+		};
+
+		string rules_directory;
+
+		map<string, Rule> rules;
+
+		ruleReturn readRuleFile(string);
+		bool checkIfRuleIsValid(map<string, string>);
 		void loadRules(Settings*&);
 		void generateRuleFromFile(string&);
+		void showRuleContent(map<string, string>);
 
 	public:
 
