@@ -1,31 +1,38 @@
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <dirent.h>
-#include <set>
-#include <map>
+#ifndef RULES
+#define RULES
+
 #include <iostream>
 #include <filesystem>
+#include <fstream>
+#include <set>
+#include <map>
+#include <string>
+#include <typeinfo>
 #include "logger.h"
 #include "settings.h"
 #include "rule.h"
-
-#ifndef RULES
-#define RULES
 
 namespace fs = std::filesystem;
 using namespace std;
 
 class RuleManager {
 
-	struct ruleReturn {
-		bool success;
-		map<string, string> rule;
-	};
-
 	private:
 
+		struct ruleReturn {
+			bool success;
+			map<string, string> rule;
+		};
+
+		const set<string> mandatory_rule_settings {
+			"RULE_NAME",
+			"COMMAND",
+			"CPU_TRIGGER_THRESHOLD",
+			"MEM_TRIGGER_THRESHOLD"
+		};
+
 		const set<string> available_rule_settings {
+			"RULE_NAME",
 			"COMMAND",
 			"NO_CHECK",
 			"FREEZE",
@@ -33,13 +40,8 @@ class RuleManager {
 			"PID_KILL_ENABLED",
 			"SEND_PROCESS_FILES",
 			"CPU_TRIGGER_THRESHOLD",
-			"MEM_TRIGGER_THRESHOLD"
-		};
-
-		const set<string> mandatory_rule_settings {
-			"COMMAND",
-			"CPU_TRIGGER_THRESHOLD",
-			"MEM_TRIGGER_THRESHOLD"
+			"MEM_TRIGGER_THRESHOLD",
+			"CHECKS_BEFORE_ALERT"
 		};
 
 		string rules_directory;
@@ -56,6 +58,7 @@ class RuleManager {
 	public:
 
 		RuleManager(Settings*&);
+
 };
 
 #endif

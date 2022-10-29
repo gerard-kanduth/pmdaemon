@@ -1,3 +1,6 @@
+#ifndef SETTINGS
+#define SETTINGS
+
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -6,9 +9,6 @@
 #include <cmath>
 #include <algorithm>
 #include "logger.h"
-
-#ifndef SETTINGS
-#define SETTINGS
 
 using namespace std;
 

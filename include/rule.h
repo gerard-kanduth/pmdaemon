@@ -1,7 +1,9 @@
-#include <string>
-
 #ifndef RULE
 #define RULE
+
+#include <string>
+#include <set>
+#include <map>
 
 using namespace std;
 
@@ -16,7 +18,10 @@ class Rule {
 		bool send_process_files;
 		double cpu_trigger_threshold;
 		double mem_trigger_threshold;
+		int checks_before_alert;
+		string rule_name;
 		string command;
 
 };
+
 #endif

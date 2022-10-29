@@ -1,3 +1,6 @@
+#ifndef CONTROLLER
+#define CONTROLLER
+
 #include <cctype>
 #include <iostream>
 #include <curl/curl.h>
@@ -143,3 +146,5 @@ class Controller {
 		bool iterateProcessList(string);
 		
 };
+
+#endif

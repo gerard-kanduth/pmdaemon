@@ -1,9 +1,9 @@
+#ifndef LOGGER
+#define LOGGER
+
 #include <syslog.h>
 #include <iostream>
 #include <string>
-
-#ifndef LOGGER
-#define LOGGER
 
 using namespace std;
 

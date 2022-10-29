@@ -20,51 +20,94 @@ void RuleManager::loadRules() {
 
 // check if read values are valid
 void RuleManager::generateRuleFromFile(string &filename) {
-	Logger::logInfo("Loading rule " +filename);
-	ruleReturn rule_content = readRuleFile(filename);
+	Logger::logInfo("Loading file " +filename);
+	ruleReturn file_content = readRuleFile(filename);
 
 	// check if the rule file was readable and present
-	if (!rule_content.success) {
+	if (!file_content.success) {
 		Logger::logError("Unable to read this file! Please have a look at this rule.");
 	}
 	else {
-		if (checkIfRuleIsValid(rule_content.rule)) {
-			showRuleContent(rule_content.rule);
-			Logger::logInfo("Register rule " +filename);
-			registerRule(rule_content.rule);
-			Logger::logInfo("Done!");
+		Logger::logInfo("Validating " +filename);
+		if (checkIfRuleIsValid(file_content.rule)) {
+			showRuleContent(file_content.rule);
+			Logger::logInfo("Registering rule " +filename);
+			if (registerRule(file_content.rule))
+				Logger::logInfo("Done!");
+			else
+				Logger::logError("Unable to register rule! Error parsing rule settings.");
 		}
 		else {
-			Logger::logError("Incomplete rule! Make sure all mandatory rule settings are set.");
+			Logger::logError("Broken or incomplete rule! Skipping.");
+			Logger::logDebug("Make sure all mandatory settings are present and correct datatypes are used.");
 		}
 	}
 }
 
-bool RuleManager::registerRule(map<string, string> rule) {
-	Rule rrule;
+bool RuleManager::registerRule(map<string, string> file_content) {
 
-	// mandatory rule settings first
-	rrule.command = rule["COMMAND"];
-	rrule.cpu_trigger_threshold = stoi(rule["CPU_TRIGGER_THRESHOLD"]);
-	rrule.mem_trigger_threshold = stoi(rule["MEM_TRIGGER_THRESHOLD"]);
+	try {
 
-	// optional rule settings
-	(rule["NO_CHECK"] == "1") ? rrule.no_check = true : rrule.no_check = false;
-	(rule["FREEZE"] == "1") ? rrule.freeze = true : rrule.freeze = false;
-	(rule["OOM_KILL_ENABLED"] == "1") ? rrule.oom_kill_enabled = true : rrule.oom_kill_enabled = false;
-	(rule["PID_KILL_ENABLED"] == "1") ? rrule.pid_kill_enabled = true : rrule.pid_kill_enabled = false;
-	(rule["SEND_PROCESS_FILES"] == "1") ? rrule.send_process_files = true : rrule.send_process_files = false;
+		Rule rule;
 
-	cout << rrule.command << "\n";
-	this->rules.insert(std::pair<string, Rule>(rrule.command, rrule));
+		// mandatory rule settings first
+		rule.rule_name = file_content["RULE_NAME"];
+		rule.command = file_content["COMMAND"];
+		rule.cpu_trigger_threshold = stod(file_content["CPU_TRIGGER_THRESHOLD"]);
+		rule.mem_trigger_threshold = stod(file_content["MEM_TRIGGER_THRESHOLD"]);
+		
+		if (!file_content["CHECKS_BEFORE_ALERT"].empty())
+			rule.checks_before_alert = stoi(file_content["CHECKS_BEFORE_ALERT"]);
+
+		// optional rule settings
+		(file_content["NO_CHECK"] == "1") ? rule.no_check = true : rule.no_check = false;
+		(file_content["FREEZE"] == "1") ? rule.freeze = true : rule.freeze = false;
+		(file_content["OOM_KILL_ENABLED"] == "1") ? rule.oom_kill_enabled = true : rule.oom_kill_enabled = false;
+		(file_content["PID_KILL_ENABLED"] == "1") ? rule.pid_kill_enabled = true : rule.pid_kill_enabled = false;
+		(file_content["SEND_PROCESS_FILES"] == "1") ? rule.send_process_files = true : rule.send_process_files = false;
+
+		cout << rule.command << "\n";
+		this->rules.insert(std::pair<string, Rule>(rule.command, rule));
+
+		return true;
+
+	} catch (...) {
+		return false;
+	}
 }
 
-// check if all mandatory_rule_settings are set, otherwise discard this rule
-bool RuleManager::checkIfRuleIsValid(map<string, string> rule) {
+bool RuleManager::checkIfRuleIsValid(map<string, string> file_content) {
+
+	// check if all mandatory_rule_settings are set, otherwise discard this rule
 	for (auto s : this->mandatory_rule_settings) {
-		if (rule[s].empty())
+		if (file_content[s].empty())
 			return false;
 	}
+
+	// check that all settings do have the correct datatype
+	set<string> boolean_settings = {file_content["NO_CHECK"], file_content["FREEZE"], file_content["OOM_KILL_ENABLED"], file_content["PID_KILL_ENABLED"], file_content["SEND_PROCESS_FILES"]};
+	for (auto b : boolean_settings) {
+		if ((!b.empty()) && (b != "1" && b != "0")) {
+			return false;
+		}
+	}
+
+	// check if value is double
+	set<string> double_settings = {file_content["CPU_TRIGGER_THRESHOLD"], file_content["MEM_TRIGGER_THRESHOLD"]};
+	for (auto d : double_settings) {
+		if ((!d.empty()) && (d.find_first_not_of(".0123456789") != std::string::npos)) {
+			return false;
+		}
+	}
+
+	// check if value is int
+	set<string> int_settings = {file_content["CHECKS_BEFORE_ALERT"]};
+	for (auto i : int_settings) {
+		if ((!i.empty()) && (i.find_first_not_of("0123456789") != std::string::npos)) {
+			return false;
+		}
+	}
+
 	return true;
 }
 
