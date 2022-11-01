@@ -7,41 +7,42 @@ Controller::Controller(Settings*& settings) {
 	this->hostname = this->hostname_buffer;
 
 	// load needed settings
-	max_errors = settings->getMaxErrors();
-	cpu_trigger_threshold = settings->getCpuTriggerThreshold();
-	mem_trigger_threshold = settings->getMemTriggerThreshold();
-	state_trigger = settings->getStateTrigger();
-	checks_cooldown = settings->getChecksCooldown();
-	checks_before_alert = settings->getChecksBeforeAlert();
-	graylog_enabled = settings->getGraylogEnabled();
-	load_rules = settings->getLoadRules();
+	this->max_errors = settings->getMaxErrors();
+	this->default_cpu_trigger_threshold = settings->getCpuTriggerThreshold();
+	this->default_mem_trigger_threshold = settings->getMemTriggerThreshold();
+	this->default_checks_before_alert = settings->getChecksBeforeAlert();
+	this->state_trigger = settings->getStateTrigger();
+	this->checks_cooldown = settings->getChecksCooldown();
+	this->graylog_enabled = settings->getGraylogEnabled();
+	this->load_rules = settings->getLoadRules();
+	this->specific_rules_check_only = settings->getSpecificRulesCheckOnly();
 
-	if (graylog_enabled) {
-		graylog_transport_method = settings->getGraylogTransportMethod();
-		graylog_port = settings->getGraylogPort();
-		graylog_fqdn = settings->getGraylogFQDN();
-		graylog_http_path = settings->getGraylogHTTPPath();
-		graylog_http_secure = settings->getGraylogHTTPSecure();
+	if (this->graylog_enabled) {
+		this->graylog_transport_method = settings->getGraylogTransportMethod();
+		this->graylog_port = settings->getGraylogPort();
+		this->graylog_fqdn = settings->getGraylogFQDN();
+		this->graylog_http_path = settings->getGraylogHTTPPath();
+		this->graylog_http_secure = settings->getGraylogHTTPSecure();
 
-		if (graylog_transport_method == "http") {
+		if (this->graylog_transport_method == "http") {
 
 			// setup the curl environment
 			// libcurl, see: https://curl.se/libcurl/c/curl_global_init.html
 			curl_global_init(CURL_GLOBAL_ALL);
 
-			if (graylog_http_secure)
-				graylog_http_protocol_prefix = "https://";
+			if (this->graylog_http_secure)
+				this->graylog_http_protocol_prefix = "https://";
 			else
-				graylog_http_protocol_prefix = "http://";
-			graylog_final_url = graylog_http_protocol_prefix+graylog_fqdn+":"+to_string(graylog_port)+graylog_http_path;
+				this->graylog_http_protocol_prefix = "http://";
+			this->graylog_final_url = this->graylog_http_protocol_prefix+this->graylog_fqdn+":"+to_string(this->graylog_port)+this->graylog_http_path;
 
 			Logger::logInfo("Processes will be logged to "+graylog_final_url);
 		}
 	}
 
-	// load rules
+	// load rules if not deactivated in the settings
 	if (load_rules)
-		rules = new RuleManager(settings);
+		this->rulemanager = new RuleManager(settings->getRulesDir());
 
 }
 
@@ -158,15 +159,40 @@ bool Controller::iterateProcessList(string check_result) {
 
 bool Controller::checkProcess(Process* process) {
 
-	// TODO
-	/* Override threshold with specific rule for this specific process (if available) */
+	// check if a specific rule for the command is available if LOAD_RULES is enabled
+	if (this->load_rules) {
+		this->specific_rule = this->rulemanager->loadIfRuleExists(&process->command);
+		if (this->specific_rule != NULL) {
 
-	if (process->pcpu > this->cpu_trigger_threshold) {
+			// skip command if the NO_CHECK setting is set in rule
+			if (this->specific_rule->no_check) {
+				Logger::logDebug("Skipping "+std::string((&this->specific_rule->command)->c_str())+" due to NO_CHECK in rule "+std::string((&this->specific_rule->rule_name)->c_str()));
+				return true;
+			} else {
+				this->cpu_trigger_threshold = &this->specific_rule->cpu_trigger_threshold;
+				this->mem_trigger_threshold = &this->specific_rule->mem_trigger_threshold;
+				this->checks_before_alert = &this->specific_rule->checks_before_alert;
+			}
+		} else {
+
+			// do not check processes if SPECIFIC_RULES_CHECK_ONLY is enabled
+			if (this->specific_rules_check_only) {
+				return true;
+			}
+
+			this->cpu_trigger_threshold = &default_cpu_trigger_threshold;
+			this->mem_trigger_threshold = &default_mem_trigger_threshold;
+			this->checks_before_alert = &default_checks_before_alert;
+		}
+	}
+
+
+	if (process->pcpu > *this->cpu_trigger_threshold) {
 		Logger::logDebug("Process with PID "+to_string(process->pid)+ " has a load of "+to_string(process->pcpu));
 		return checkPenaltyList(process, "cpu");
 	}
 
-	if (process->pmem > this->mem_trigger_threshold) {
+	if (process->pmem > *this->mem_trigger_threshold) {
 		Logger::logDebug("Process with PID "+to_string(process->pid)+ " uses "+to_string(process->pmem)+" of RAM");
 		return checkPenaltyList(process, "mem");
 	}
@@ -194,7 +220,7 @@ bool Controller::checkPenaltyList(Process* process, string penalty_cause) {
 		it->second.penalty_counter++;
 
 		// alert if not already alerted
-		if (it->second.penalty_counter >= checks_before_alert && it->second.alerted == false ) {
+		if (it->second.penalty_counter >= *this->checks_before_alert && it->second.alerted == false ) {
 			doAlert(collectProcessInfo(process, penalty_cause));
 			it->second.alerted = true;
 		}
@@ -335,7 +361,6 @@ void Controller::graylogTCPAlert(ProcessInfo process_info) {
 }
 
 bool Controller::curlPostJSON(const char* json_data) {
-
 	// create a curl handle
 	// libcurl, see: https://curl.se/libcurl/c/curl_easy_init.html
 	curl = curl_easy_init();
@@ -351,8 +376,8 @@ bool Controller::curlPostJSON(const char* json_data) {
 
 		// set all needed options for the curl post
 		// libcurl, see: https://curl.se/libcurl/c/curl_easy_setopt.html
-		curl_easy_setopt(curl, CURLOPT_TIMEOUT, 20);
-		curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 20);
+		curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10);
+		curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 5);
 		curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 		curl_easy_setopt(curl, CURLOPT_URL, graylog_final_url.c_str());
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_data);

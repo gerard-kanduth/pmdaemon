@@ -19,7 +19,7 @@ class RuleManager {
 
 	private:
 
-		struct ruleReturn {
+		struct RuleReturn {
 			bool success;
 			map<string, string> rule;
 		};
@@ -44,11 +44,11 @@ class RuleManager {
 			"CHECKS_BEFORE_ALERT"
 		};
 
-		string rules_directory;
+		const char* rules_directory;
 
 		map<string, Rule> rules;
 
-		ruleReturn readRuleFile(string);
+		RuleReturn readRuleFile(string);
 		bool registerRule(map<string, string>);
 		bool checkIfRuleIsValid(map<string, string>);
 		void loadRules();
@@ -57,7 +57,8 @@ class RuleManager {
 
 	public:
 
-		RuleManager(Settings*&);
+		RuleManager(string);
+		Rule* loadIfRuleExists(string*);
 
 };
 

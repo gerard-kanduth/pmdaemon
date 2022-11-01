@@ -2,8 +2,11 @@
 #define CONTROLLER
 
 #include <cctype>
+#include <cmath>
 #include <iostream>
+#include <iomanip>
 #include <curl/curl.h>
+#include <limits>
 #include <map>
 #include <sstream>
 #include <stdio.h>
@@ -12,11 +15,6 @@
 #include "logger.h"
 #include "rulemanager.h"
 #include "settings.h"
-
-#include <iostream>
-#include <iomanip>
-#include <cmath>
-#include <limits>
 
 using namespace std;
 
@@ -66,7 +64,10 @@ class Controller {
 		Settings* settings;
 
 		// rules object (contains all loaded rules)
-		RuleManager* rules;
+		RuleManager* rulemanager;
+
+		// pointer for specific rule
+		Rule* specific_rule;
 
 		// curl instance used for http logging
 		// libcurl, see: https://curl.se/libcurl
@@ -107,10 +108,16 @@ class Controller {
 		// default limits (if no specific rule is set for process)
 		bool state_trigger;
 		bool load_rules;
-		double cpu_trigger_threshold;
-		double mem_trigger_threshold;
+		bool specific_rules_check_only;
+		double default_cpu_trigger_threshold;
+		double default_mem_trigger_threshold;
+		int default_checks_before_alert;
 		int checks_cooldown;
-		int checks_before_alert;
+
+		// the defaults will be used if LOAD_RULES is disabled
+		int* checks_before_alert = &default_checks_before_alert;
+		double* cpu_trigger_threshold = &default_cpu_trigger_threshold;
+		double* mem_trigger_threshold = &default_mem_trigger_threshold;
 
 		// graylog related variables
 		bool graylog_enabled;

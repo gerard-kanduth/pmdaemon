@@ -102,6 +102,24 @@ bool Settings::getLoadRules() {
 	}
 }
 
+bool Settings::getSpecificRulesCheckOnly() {
+	try {
+		int specific_rules_check_only = stoi(settings["SPECIFIC_RULES_CHECK_ONLY"]);
+		if (std::floor(specific_rules_check_only) == specific_rules_check_only && specific_rules_check_only == 0 || specific_rules_check_only == 1) {
+			Logger::logInfo("Setting SPECIFIC_RULES_CHECK_ONLY to \'" + to_string(specific_rules_check_only) + "\'");
+			if (specific_rules_check_only == 1)
+				return true;
+			else
+				return false;
+		}
+		else
+			throw 2;
+	} catch (...) {
+		Logger::logError("Invalid SPECIFIC_RULES_CHECK_ONLY value in configuration! Using '0'.");
+		return false;
+	}
+}
+
 double Settings::getCpuTriggerThreshold() {
 	try {
 		string ctt = settings["CPU_TRIGGER_THRESHOLD"];

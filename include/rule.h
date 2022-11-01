@@ -2,8 +2,6 @@
 #define RULE
 
 #include <string>
-#include <set>
-#include <map>
 
 using namespace std;
 
