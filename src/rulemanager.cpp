@@ -1,25 +1,26 @@
 #include "rulemanager.h"
 
-RuleManager::RuleManager(string rules_directory) {
+RuleManager::RuleManager(const char* daemon_name, string rules_directory) {
+	this->daemon_name = daemon_name;
 	this->rules_directory = rules_directory.c_str();
 	Logger::logInfo("Loading available rules from " + std::string(this->rules_directory));
 	loadRules();
 }
 
 void RuleManager::loadRules() {
+
 	const std::filesystem::path rules_dir{this->rules_directory};
 
 	// load all files in this->rules_directory ending with ".conf"
 	for(auto& file: fs::directory_iterator(rules_dir)) {
 		if (file.path().u8string().find(".conf", 0) != string::npos) {
-			string current_rule_file = std::string(file.path());
-			generateRuleFromFile(current_rule_file);
+			generateRuleFromFile(std::string(file.path()));
 		}
 	}
 }
 
 // check if read values are valid
-void RuleManager::generateRuleFromFile(string &filename) {
+bool RuleManager::generateRuleFromFile(string filename) {
 	Logger::logInfo("Loading file " +filename);
 	RuleReturn file_content = readRuleFile(filename);
 
@@ -30,18 +31,32 @@ void RuleManager::generateRuleFromFile(string &filename) {
 	else {
 		Logger::logInfo("  |-> Validating file ...");
 		if (checkIfRuleIsValid(file_content.rule)) {
-			showRuleContent(file_content.rule);
+
+
 			Logger::logInfo("  |-> Registering rule ...");
-			if (registerRule(file_content.rule))
-				Logger::logInfo("  '-> Done!");
-			else
+			if (registerRule(file_content.rule)) {
+
+				// register cgroups if enabled
+				if (this->rules[file_content.rule["COMMAND"]].enable_limiting) {
+					Logger::logInfo("  |-> Registering cgroup ...");
+					createCgroup(&this->rules[file_content.rule["COMMAND"]]);
+				}
+			}
+			else {
 				Logger::logError(" '-> Unable to register rule! Error parsing rule settings.");
+				return false;
+			}
+
 		}
 		else {
 			Logger::logError(" '-> Broken or incomplete rule! Skipping.");
 			Logger::logDebug("Make sure all mandatory settings are present and correct datatypes are used.");
+			return false;
 		}
 	}
+	// showRuleContent(file_content.rule);
+	Logger::logInfo("  '-> Done!");
+	return true;
 }
 
 bool RuleManager::registerRule(map<string, string> file_content) {
@@ -59,12 +74,27 @@ bool RuleManager::registerRule(map<string, string> file_content) {
 		if (!file_content["CHECKS_BEFORE_ALERT"].empty())
 			rule.checks_before_alert = stoi(file_content["CHECKS_BEFORE_ALERT"]);
 
+		if (!file_content["LIMIT_CPU_PERCENT"].empty())
+			rule.limit_cpu_percent = stod(file_content["LIMIT_CPU_PERCENT"]);
+
+		if (!file_content["LIMIT_MEM_PERCENT"].empty())
+			rule.limit_mem_percent = stod(file_content["LIMIT_MEM_PERCENT"]);
+
 		// optional rule settings
 		(file_content["NO_CHECK"] == "1") ? rule.no_check = true : rule.no_check = false;
 		(file_content["FREEZE"] == "1") ? rule.freeze = true : rule.freeze = false;
 		(file_content["OOM_KILL_ENABLED"] == "1") ? rule.oom_kill_enabled = true : rule.oom_kill_enabled = false;
 		(file_content["PID_KILL_ENABLED"] == "1") ? rule.pid_kill_enabled = true : rule.pid_kill_enabled = false;
 		(file_content["SEND_PROCESS_FILES"] == "1") ? rule.send_process_files = true : rule.send_process_files = false;
+		(file_content["ENABLE_LIMITING"] == "1") ? rule.enable_limiting = true : rule.enable_limiting = false;
+
+		// create the cgroup name (daemon_name+'-'+rule_name)
+		std::string cgname = this->cgroup_root_dir;
+		cgname += "/";
+		cgname += this->daemon_name;
+		cgname += "-";
+		cgname += rule.rule_name;
+		rule.cgroup_name = cgname;
 
 		// register this rule to the global rulemanager
 		this->rules.insert(std::pair<string, Rule>(rule.command, rule));
@@ -86,7 +116,14 @@ bool RuleManager::checkIfRuleIsValid(map<string, string> file_content) {
 	}
 
 	// check that all settings do have the correct datatype
-	set<string> boolean_settings = {file_content["NO_CHECK"], file_content["FREEZE"], file_content["OOM_KILL_ENABLED"], file_content["PID_KILL_ENABLED"], file_content["SEND_PROCESS_FILES"]};
+	set<string> boolean_settings = {
+		file_content["NO_CHECK"],
+		file_content["FREEZE"],
+		file_content["OOM_KILL_ENABLED"],
+		file_content["PID_KILL_ENABLED"],
+		file_content["SEND_PROCESS_FILES"],
+		file_content["ENABLE_LIMITING"]
+	};
 	for (auto& b : boolean_settings) {
 		if ((!b.empty()) && (b != "1" && b != "0")) {
 			return false;
@@ -94,7 +131,12 @@ bool RuleManager::checkIfRuleIsValid(map<string, string> file_content) {
 	}
 
 	// check if value is double
-	set<string> double_settings = {file_content["CPU_TRIGGER_THRESHOLD"], file_content["MEM_TRIGGER_THRESHOLD"]};
+	set<string> double_settings = {
+		file_content["CPU_TRIGGER_THRESHOLD"],
+		file_content["MEM_TRIGGER_THRESHOLD"],
+		file_content["LIMIT_MEM_PERCENT"],
+		file_content["LIMIT_CPU_PERCENT"]
+	};
 	for (auto& d : double_settings) {
 		if ((!d.empty()) && (d.find_first_not_of(".0123456789") != std::string::npos)) {
 			return false;
@@ -102,11 +144,43 @@ bool RuleManager::checkIfRuleIsValid(map<string, string> file_content) {
 	}
 
 	// check if value is int
-	set<string> int_settings = {file_content["CHECKS_BEFORE_ALERT"]};
+	set<string> int_settings = {
+		file_content["CHECKS_BEFORE_ALERT"]
+	};
 	for (auto& i : int_settings) {
 		if ((!i.empty()) && (i.find_first_not_of("0123456789") != std::string::npos)) {
 			return false;
 		}
+	}
+
+	// return true if all checks are passed
+	return true;
+}
+
+bool RuleManager::createCgroup(Rule* rule) {
+
+	// at least one cgroup setting must be set otherwise rule is broken
+	if ( !isnan(rule->limit_cpu_percent) || !isnan(rule->limit_mem_percent) ||  rule->freeze) {
+		Logger::logDebug("limit_cpu_percent: "+to_string(rule->limit_cpu_percent));
+		Logger::logDebug("limit_mem_percent: "+to_string(rule->limit_mem_percent));
+		Logger::logDebug("oom_kill_enabled: "+to_string(rule->oom_kill_enabled));
+		Logger::logDebug("pid_kill_enabled: "+to_string(rule->pid_kill_enabled));
+		Logger::logDebug("freezer: "+to_string(rule->freeze));
+
+		// check if the cgroup already exists, otherwise create it
+		if (fs::exists(rule->cgroup_name.c_str())) {
+			Logger::logInfo("  |-> Cgroup "+rule->cgroup_name+" already exists!");
+		}
+		else {
+			if (mkdir(rule->cgroup_name.c_str(), 0750) != -1) {
+				Logger::logInfo("  |-> Created cgroup "+rule->cgroup_name);
+			}
+			else {
+				Logger::logError("Unable to create cgroup "+std::string(rule->cgroup_name));
+			}
+		}
+
+
 	}
 
 	return true;

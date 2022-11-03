@@ -4,9 +4,11 @@
 #include <iostream>
 #include <filesystem>
 #include <fstream>
-#include <set>
 #include <map>
+#include <set>
 #include <string>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <typeinfo>
 #include "logger.h"
 #include "settings.h"
@@ -41,6 +43,9 @@ class RuleManager {
 			"SEND_PROCESS_FILES",
 			"CPU_TRIGGER_THRESHOLD",
 			"MEM_TRIGGER_THRESHOLD",
+			"ENABLE_LIMITING",
+			"LIMIT_CPU_PERCENT",
+			"LIMIT_MEM_PERCENT",
 			"CHECKS_BEFORE_ALERT"
 		};
 
@@ -48,16 +53,20 @@ class RuleManager {
 
 		map<string, Rule> rules;
 
+		const char* cgroup_root_dir = "/sys/fs/cgroup";
+		const char* daemon_name;
+
 		RuleReturn readRuleFile(string);
-		bool registerRule(map<string, string>);
+		bool createCgroup(Rule*);
 		bool checkIfRuleIsValid(map<string, string>);
+		bool generateRuleFromFile(string);
+		bool registerRule(map<string, string>);
 		void loadRules();
-		void generateRuleFromFile(string&);
 		void showRuleContent(map<string, string>);
 
 	public:
 
-		RuleManager(string);
+		RuleManager(const char*, string);
 		Rule* loadIfRuleExists(string*);
 
 };

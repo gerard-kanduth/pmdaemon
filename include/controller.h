@@ -69,6 +69,9 @@ class Controller {
 		// pointer for specific rule
 		Rule* specific_rule;
 
+		// the name of the daemon
+		const char* daemon_name;
+
 		// curl instance used for http logging
 		// libcurl, see: https://curl.se/libcurl
 		CURL* curl;
@@ -145,7 +148,7 @@ class Controller {
 	public:
 
 		// public functions
-		Controller(Settings*&);
+		Controller(const char*, Settings*&);
 		~Controller();
 		bool checkProcess(Process*);
 		void doAlert(ProcessInfo);

@@ -14,11 +14,15 @@ class Rule {
 		bool oom_kill_enabled;
 		bool pid_kill_enabled;
 		bool send_process_files;
-		double cpu_trigger_threshold;
-		double mem_trigger_threshold;
+		bool enable_limiting;
+		double limit_cpu_percent = NAN;
+		double limit_mem_percent = NAN;
+		double cpu_trigger_threshold = NAN;
+		double mem_trigger_threshold = NAN;
 		int checks_before_alert;
 		string rule_name;
 		string command;
+		string cgroup_name;
 
 };
 

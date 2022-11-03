@@ -1,7 +1,8 @@
 #include "controller.h"
 
-Controller::Controller(Settings*& settings) {
+Controller::Controller(const char* daemon_name, Settings*& settings) {
 	Logger::logInfo("Initializing the controller ...");
+	this->daemon_name = daemon_name;
 	this->settings = settings;
 	gethostname(this->hostname_buffer, sizeof(this->hostname_buffer));
 	this->hostname = this->hostname_buffer;
@@ -42,7 +43,7 @@ Controller::Controller(Settings*& settings) {
 
 	// load rules if not deactivated in the settings
 	if (load_rules)
-		this->rulemanager = new RuleManager(settings->getRulesDir());
+		this->rulemanager = new RuleManager(this->daemon_name, settings->getRulesDir());
 
 }
 
@@ -166,7 +167,8 @@ bool Controller::checkProcess(Process* process) {
 
 			// skip command if the NO_CHECK setting is set in rule
 			if (this->specific_rule->no_check) {
-				Logger::logDebug("Skipping "+std::string((&this->specific_rule->command)->c_str())+" due to NO_CHECK in rule "+std::string((&this->specific_rule->rule_name)->c_str()));
+				if (Logger::getLogLevel() == "debug")
+					Logger::logDebug("Skipping "+std::string((&this->specific_rule->command)->c_str())+" due to NO_CHECK in rule "+std::string((&this->specific_rule->rule_name)->c_str()));
 				return true;
 			} else {
 				this->cpu_trigger_threshold = &this->specific_rule->cpu_trigger_threshold;

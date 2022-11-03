@@ -50,7 +50,7 @@ int main() {
 	check_interval = settings->getCheckInterval();
 
 	// initializing the controller
-	controller = new Controller(settings);
+	controller = new Controller(daemon_name, settings);
 
 	/* --- start check routine --- */
 	Logger::logNotice("Starting "+std::string(daemon_name)+" monitoring ...");
