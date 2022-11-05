@@ -45,7 +45,7 @@ class RuleManager {
 			"MEM_TRIGGER_THRESHOLD",
 			"ENABLE_LIMITING",
 			"LIMIT_CPU_PERCENT",
-			"LIMIT_MEM_PERCENT",
+			"LIMIT_MEMORY_VALUE",
 			"CHECKS_BEFORE_ALERT"
 		};
 
@@ -73,7 +73,7 @@ class RuleManager {
 	public:
 
 		RuleManager(const char*, string);
-		Rule* loadIfRuleExists(string*);
+		Rule* loadIfRuleExists(string);
 
 };
 

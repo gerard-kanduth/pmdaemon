@@ -151,7 +151,7 @@ bool Controller::iterateProcessList(string check_result) {
 
 	// show the current penalty-list (debug-only)
 	if (Logger::getLogLevel() == "debug") {
-		for (it=penalty_list.begin(); it!=penalty_list.end(); ++it)
+		for (it = penalty_list.begin(); it != penalty_list.end(); ++it)
 			if (it->second.penalty_cause != "zombie" && it->second.penalty_cause != "dstate")
 				Logger::logDebug("PID: "+to_string(it->second.pid)+" Penalty_Counter: "+to_string(it->second.penalty_counter)+" Cooldown_Counter: "+to_string(it->second.cooldown_counter));
 	}
@@ -161,19 +161,25 @@ bool Controller::iterateProcessList(string check_result) {
 bool Controller::checkProcess(Process* process) {
 
 	// check if a specific rule for the command is available if LOAD_RULES is enabled
+	// Rule* specific_rule = nullptr;
 	if (this->load_rules) {
-		this->specific_rule = this->rulemanager->loadIfRuleExists(&process->command);
-		if (this->specific_rule != NULL) {
+
+		this->specific_rule = this->rulemanager->loadIfRuleExists(process->command);
+
+		if (this->specific_rule) {
+
+			cout << "process command " << process->command << "\n";
 
 			// skip command if the NO_CHECK setting is set in rule
 			if (this->specific_rule->no_check) {
 				if (Logger::getLogLevel() == "debug")
-					Logger::logDebug("Skipping "+std::string((&this->specific_rule->command)->c_str())+" due to NO_CHECK in rule "+std::string((&this->specific_rule->rule_name)->c_str()));
+					Logger::logDebug("Skipping '"+this->specific_rule->command+"' due to NO_CHECK in rule "+this->specific_rule->rule_name);
 				return true;
 			} else {
 				this->cpu_trigger_threshold = &this->specific_rule->cpu_trigger_threshold;
 				this->mem_trigger_threshold = &this->specific_rule->mem_trigger_threshold;
 				this->checks_before_alert = &this->specific_rule->checks_before_alert;
+
 			}
 		} else {
 
@@ -199,14 +205,16 @@ bool Controller::checkProcess(Process* process) {
 		return checkPenaltyList(process, "mem");
 	}
 
-	if (process->state == "Z") {
-		Logger::logDebug("Process with PID "+to_string(process->pid)+ " state changed to ZOMBIE ("+process->state+")");
-		return checkPenaltyList(process, "zombie");
-	}
+	if (this->state_trigger) {
+		if (process->state == "Z") {
+			Logger::logDebug("Process with PID "+to_string(process->pid)+ " state changed to ZOMBIE ("+process->state+")");
+			return checkPenaltyList(process, "zombie");
+		}
 
-	if (process->state == "D" || process->state == "D+") {
-		Logger::logDebug("Process with PID "+to_string(process->pid)+ " state changed to UNINTERRUPTIBLE SLEEP ("+process->state+")");
-		return checkPenaltyList(process, "dstate");
+		if (process->state == "D" || process->state == "D+") {
+			Logger::logDebug("Process with PID "+to_string(process->pid)+ " state changed to UNINTERRUPTIBLE SLEEP ("+process->state+")");
+			return checkPenaltyList(process, "dstate");
+		}
 	}
 
 	return true;
@@ -225,6 +233,13 @@ bool Controller::checkPenaltyList(Process* process, string penalty_cause) {
 		if (it->second.penalty_counter >= *this->checks_before_alert && it->second.alerted == false ) {
 			doAlert(collectProcessInfo(process, penalty_cause));
 			it->second.alerted = true;
+			if (this->specific_rule->enable_limiting) {
+				if(doLimit(process)) {
+					Logger::logInfo("["+this->specific_rule->rule_name+"] Added PID "+to_string(process->pid)+" to cgroup "+this->specific_rule->cgroup_name);
+				} else {
+					Logger::logError("["+this->specific_rule->rule_name+"] Unable to add PID "+to_string(process->pid)+" to cgroup "+this->specific_rule->cgroup_name);
+				}
+			}
 		}
 		// decrease cooldown-counter if already alerted
 		else {
@@ -247,6 +262,16 @@ bool Controller::checkPenaltyList(Process* process, string penalty_cause) {
 		penalty_list[process->pid] = penalty_pid;
 		Logger::logDebug("Added "+to_string(process->pid)+" to penalty-list due to "+penalty_cause+".");
 	}
+	return true;
+}
+
+bool Controller::doLimit(Process* process) {
+	//TODO
+	return true;
+}
+
+bool Controller::addPIDtoCgroup() {
+	//TODO
 	return true;
 }
 

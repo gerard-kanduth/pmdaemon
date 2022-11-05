@@ -72,14 +72,21 @@ bool RuleManager::registerRule(map<string, string> file_content) {
 		rule.cpu_trigger_threshold = stod(file_content["CPU_TRIGGER_THRESHOLD"]);
 		rule.mem_trigger_threshold = stod(file_content["MEM_TRIGGER_THRESHOLD"]);
 
+		// check if values are valid (e.g. not negative values)
 		if (!file_content["CHECKS_BEFORE_ALERT"].empty())
 			rule.checks_before_alert = stoi(file_content["CHECKS_BEFORE_ALERT"]);
+			if (rule.checks_before_alert < 0)
+				return false;
 
 		if (!file_content["LIMIT_CPU_PERCENT"].empty())
 			rule.limit_cpu_percent = stoi(file_content["LIMIT_CPU_PERCENT"]);
+			if (rule.limit_cpu_percent < 0 || rule.limit_cpu_percent > 100)
+				return false;
 
-		if (!file_content["LIMIT_MEM_PERCENT"].empty())
-			rule.limit_mem_percent = stoi(file_content["LIMIT_MEM_PERCENT"]);
+		if (!file_content["LIMIT_MEMORY_VALUE"].empty())
+			rule.limit_memory_value = stoi(file_content["LIMIT_MEMORY_VALUE"]);
+			if (rule.limit_memory_value < 0)
+				return false;
 
 		// optional rule settings
 		(file_content["NO_CHECK"] == "1") ? rule.no_check = true : rule.no_check = false;
@@ -93,6 +100,7 @@ bool RuleManager::registerRule(map<string, string> file_content) {
 		std::string cgroup_name = this->daemon_name;
 		cgroup_name += "-";
 		cgroup_name += rule.rule_name;
+		rule.cgroup_name = cgroup_name;
 
 		// cgroup root dir
 		std::string cgroup_root_dir = this->cgroup_root_dir;
@@ -156,7 +164,7 @@ bool RuleManager::checkIfRuleIsValid(map<string, string> file_content) {
 	// check if value is int
 	set<string> int_settings = {
 		file_content["CHECKS_BEFORE_ALERT"],
-		file_content["LIMIT_MEM_PERCENT"],
+		file_content["LIMIT_MEMORY_VALUE"],
 		file_content["LIMIT_CPU_PERCENT"]
 	};
 	for (auto& i : int_settings) {
@@ -172,12 +180,14 @@ bool RuleManager::checkIfRuleIsValid(map<string, string> file_content) {
 bool RuleManager::createCgroup(Rule* rule) {
 
 	// at least one cgroup setting must be set otherwise rule is broken
-	if ( rule->limit_cpu_percent >= 0 || rule->limit_mem_percent >= 0 ||  rule->freeze || rule->oom_kill_enabled || rule->pid_kill_enabled) {
-		Logger::logDebug("limit_cpu_percent: "+to_string(rule->limit_cpu_percent));
-		Logger::logDebug("limit_mem_percent: "+to_string(rule->limit_mem_percent));
-		Logger::logDebug("oom_kill_enabled: "+to_string(rule->oom_kill_enabled));
-		Logger::logDebug("pid_kill_enabled: "+to_string(rule->pid_kill_enabled));
-		Logger::logDebug("freezer: "+to_string(rule->freeze));
+	if ( rule->limit_cpu_percent >= 0 || rule->limit_memory_value >= 0 ||  rule->freeze || rule->oom_kill_enabled || rule->pid_kill_enabled) {
+		if (Logger::getLogLevel() == "debug") {
+			Logger::logDebug("limit_cpu_percent: "+to_string(rule->limit_cpu_percent));
+			Logger::logDebug("limit_memory_value: "+to_string(rule->limit_memory_value));
+			Logger::logDebug("oom_kill_enabled: "+to_string(rule->oom_kill_enabled));
+			Logger::logDebug("pid_kill_enabled: "+to_string(rule->pid_kill_enabled));
+			Logger::logDebug("freezer: "+to_string(rule->freeze));
+		}
 
 		// check if the cgroup already exists, otherwise create it
 		if (fs::exists(rule->cgroup_root_dir.c_str())) {
@@ -201,12 +211,36 @@ bool RuleManager::createCgroup(Rule* rule) {
 
 		// prepare the freezer file for the given cgroup
 		string freeze;
-		if (rule->freeze) {	freeze = "1"; } else { freeze = "0"; }
+		if (rule->freeze) {	freeze = "1"; }
+		else { freeze = "0"; }
 		if (!writeInFile(rule->cgroup_freezer_file, freeze)) {
 			Logger::logError("Something went wrong while modifying "+rule->cgroup_freezer_file);
 			return false;
 		}
 
+		// prepare the cpu.max file for the given cgroup
+		string cpu_max;
+		if (rule->limit_cpu_percent > 0) { cpu_max = to_string(rule->limit_cpu_percent)+"000 100000"; }
+		else { cpu_max = "max 100000"; }
+		if (!writeInFile(rule->cgroup_cpu_max_file, cpu_max)) {
+			Logger::logError("Something went wrong while modifying "+rule->cgroup_cpu_max_file);
+			return false;
+		}
+
+		// prepare the memory.high and memory.max file for the given cgroup
+		string memory_value;
+		if (rule->limit_memory_value > 0) { memory_value = to_string(rule->limit_memory_value); }
+		else { memory_value = "max"; }
+		if (!writeInFile(rule->cgroup_memory_high_file, memory_value)) {
+			Logger::logError("Something went wrong while modifying "+rule->cgroup_memory_high_file);
+			return false;
+		}
+		if (rule->oom_kill_enabled) {
+			if (!writeInFile(rule->cgroup_memory_max_file, memory_value)) {
+				Logger::logError("Something went wrong while modifying "+rule->cgroup_memory_max_file);
+				return false;
+			}
+		}
 
 	}
 
@@ -229,13 +263,13 @@ bool RuleManager::writeInFile(string filename, string text) {
 	}
 }
 
-Rule* RuleManager::loadIfRuleExists(string* command) {
+Rule* RuleManager::loadIfRuleExists(string command) {
 	for (auto& r : this->rules) {
-		if (command->find(r.first) != std::string::npos){
+		if (command.find(r.first) != std::string::npos){
 			return &this->rules[r.first];
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 
 // read the file and return a map object with read values

@@ -19,7 +19,7 @@ class Rule {
 		double mem_trigger_threshold = NAN;
 		int checks_before_alert;
 		int limit_cpu_percent = -1;
-		int limit_mem_percent = -1;
+		int limit_memory_value = -1;
 		string rule_name;
 		string command;
 		string cgroup_root_dir;

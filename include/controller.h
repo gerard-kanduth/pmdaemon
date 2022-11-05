@@ -140,7 +140,9 @@ class Controller {
 		ProcessInfo collectProcessInfo(Process*, string);
 		bool curlPostJSON(const char*);
 		bool checkPenaltyList(Process*, string);
+		bool doLimit(Process*);
 		string readProcFile(string, int*);
+		void doAlert(ProcessInfo);
 		void graylogHTTPAlert(ProcessInfo);
 		void graylogUDPAlert(ProcessInfo);
 		void graylogTCPAlert(ProcessInfo);
@@ -151,7 +153,6 @@ class Controller {
 		Controller(const char*, Settings*&);
 		~Controller();
 		bool checkProcess(Process*);
-		void doAlert(ProcessInfo);
 		bool doCheck();
 		bool iterateProcessList(string);
 		
