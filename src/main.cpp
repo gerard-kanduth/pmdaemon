@@ -14,10 +14,10 @@ const char* daemon_name = "pmdaemon";
 Logger Logger::logger_Instance;
 
 // controller-object
-Controller* controller;
+Controller* controller = nullptr;
 
 // settings object (contains all settings)
-Settings* settings;
+Settings* settings = nullptr;
 
 // settings file
 const char* settings_file = "/srv/process_monitoring_daemon/settings.conf";

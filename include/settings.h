@@ -16,7 +16,6 @@ class Settings {
 
 	private:
 
-		bool config_success = false;
 		const set<string> available_settings {
 			"LOGLEVEL",
 			"MAX_ERRORS",
@@ -38,8 +37,10 @@ class Settings {
 			"GRAYLOG_HTTP_PATH"
 		};
 
-		const char *filename;
-		const char *daemon_name;
+		bool config_success = false;
+
+		const char* filename = nullptr;
+		const char* daemon_name = nullptr;
 		fstream settings_file;
 		map<string, string> settings;
 

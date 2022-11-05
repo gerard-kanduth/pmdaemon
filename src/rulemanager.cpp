@@ -54,6 +54,7 @@ bool RuleManager::generateRuleFromFile(string filename) {
 			return false;
 		}
 	}
+
 	// showRuleContent(file_content.rule);
 	Logger::logInfo("  '-> Done!");
 	return true;
@@ -75,10 +76,10 @@ bool RuleManager::registerRule(map<string, string> file_content) {
 			rule.checks_before_alert = stoi(file_content["CHECKS_BEFORE_ALERT"]);
 
 		if (!file_content["LIMIT_CPU_PERCENT"].empty())
-			rule.limit_cpu_percent = stod(file_content["LIMIT_CPU_PERCENT"]);
+			rule.limit_cpu_percent = stoi(file_content["LIMIT_CPU_PERCENT"]);
 
 		if (!file_content["LIMIT_MEM_PERCENT"].empty())
-			rule.limit_mem_percent = stod(file_content["LIMIT_MEM_PERCENT"]);
+			rule.limit_mem_percent = stoi(file_content["LIMIT_MEM_PERCENT"]);
 
 		// optional rule settings
 		(file_content["NO_CHECK"] == "1") ? rule.no_check = true : rule.no_check = false;
@@ -88,13 +89,24 @@ bool RuleManager::registerRule(map<string, string> file_content) {
 		(file_content["SEND_PROCESS_FILES"] == "1") ? rule.send_process_files = true : rule.send_process_files = false;
 		(file_content["ENABLE_LIMITING"] == "1") ? rule.enable_limiting = true : rule.enable_limiting = false;
 
-		// create the cgroup name (daemon_name+'-'+rule_name)
-		std::string cgname = this->cgroup_root_dir;
-		cgname += "/";
-		cgname += this->daemon_name;
-		cgname += "-";
-		cgname += rule.rule_name;
-		rule.cgroup_name = cgname;
+		// cgroup name (daemon_name+'-'+rule_name)
+		std::string cgroup_name = this->daemon_name;
+		cgroup_name += "-";
+		cgroup_name += rule.rule_name;
+
+		// cgroup root dir
+		std::string cgroup_root_dir = this->cgroup_root_dir;
+		cgroup_root_dir += "/";
+		cgroup_root_dir += cgroup_name;
+		rule.cgroup_root_dir = cgroup_root_dir;
+
+		// create all needed file references for this cgroup
+		rule.cgroup_subtree_control_file = cgroup_root_dir+"/"+this->subtree_control_file;
+		rule.cgroup_cpu_max_file = cgroup_root_dir+"/"+this->cpu_max_file;
+		rule.cgroup_procs_file = cgroup_root_dir+"/"+this->procs_file;
+		rule.cgroup_memory_high_file = cgroup_root_dir+"/"+this->memory_high_file;
+		rule.cgroup_memory_max_file = cgroup_root_dir+"/"+this->memory_max_file;
+		rule.cgroup_freezer_file = cgroup_root_dir+"/"+this->freezer_file;
 
 		// register this rule to the global rulemanager
 		this->rules.insert(std::pair<string, Rule>(rule.command, rule));
@@ -133,9 +145,7 @@ bool RuleManager::checkIfRuleIsValid(map<string, string> file_content) {
 	// check if value is double
 	set<string> double_settings = {
 		file_content["CPU_TRIGGER_THRESHOLD"],
-		file_content["MEM_TRIGGER_THRESHOLD"],
-		file_content["LIMIT_MEM_PERCENT"],
-		file_content["LIMIT_CPU_PERCENT"]
+		file_content["MEM_TRIGGER_THRESHOLD"]
 	};
 	for (auto& d : double_settings) {
 		if ((!d.empty()) && (d.find_first_not_of(".0123456789") != std::string::npos)) {
@@ -145,7 +155,9 @@ bool RuleManager::checkIfRuleIsValid(map<string, string> file_content) {
 
 	// check if value is int
 	set<string> int_settings = {
-		file_content["CHECKS_BEFORE_ALERT"]
+		file_content["CHECKS_BEFORE_ALERT"],
+		file_content["LIMIT_MEM_PERCENT"],
+		file_content["LIMIT_CPU_PERCENT"]
 	};
 	for (auto& i : int_settings) {
 		if ((!i.empty()) && (i.find_first_not_of("0123456789") != std::string::npos)) {
@@ -160,7 +172,7 @@ bool RuleManager::checkIfRuleIsValid(map<string, string> file_content) {
 bool RuleManager::createCgroup(Rule* rule) {
 
 	// at least one cgroup setting must be set otherwise rule is broken
-	if ( !isnan(rule->limit_cpu_percent) || !isnan(rule->limit_mem_percent) ||  rule->freeze) {
+	if ( rule->limit_cpu_percent >= 0 || rule->limit_mem_percent >= 0 ||  rule->freeze || rule->oom_kill_enabled || rule->pid_kill_enabled) {
 		Logger::logDebug("limit_cpu_percent: "+to_string(rule->limit_cpu_percent));
 		Logger::logDebug("limit_mem_percent: "+to_string(rule->limit_mem_percent));
 		Logger::logDebug("oom_kill_enabled: "+to_string(rule->oom_kill_enabled));
@@ -168,22 +180,53 @@ bool RuleManager::createCgroup(Rule* rule) {
 		Logger::logDebug("freezer: "+to_string(rule->freeze));
 
 		// check if the cgroup already exists, otherwise create it
-		if (fs::exists(rule->cgroup_name.c_str())) {
-			Logger::logInfo("  |-> Cgroup "+rule->cgroup_name+" already exists!");
+		if (fs::exists(rule->cgroup_root_dir.c_str())) {
+			Logger::logInfo("  |-> Cgroup "+rule->cgroup_root_dir+" already exists!");
 		}
 		else {
-			if (mkdir(rule->cgroup_name.c_str(), 0750) != -1) {
-				Logger::logInfo("  |-> Created cgroup "+rule->cgroup_name);
+			if (mkdir(rule->cgroup_root_dir.c_str(), 0750) != -1) {
+				Logger::logInfo("  |-> Created cgroup "+rule->cgroup_root_dir);
 			}
 			else {
-				Logger::logError("Unable to create cgroup "+std::string(rule->cgroup_name));
+				Logger::logError("Unable to create cgroup "+std::string(rule->cgroup_root_dir));
+				return false;
 			}
+		}
+
+		// write all needed values into the cgroup controller files
+		if (!writeInFile(rule->cgroup_subtree_control_file, "+pids +cpu +cpuset +memory")) {
+			Logger::logError("Something went wrong while modifying "+rule->cgroup_subtree_control_file);
+			return false;
+		}
+
+		// prepare the freezer file for the given cgroup
+		string freeze;
+		if (rule->freeze) {	freeze = "1"; } else { freeze = "0"; }
+		if (!writeInFile(rule->cgroup_freezer_file, freeze)) {
+			Logger::logError("Something went wrong while modifying "+rule->cgroup_freezer_file);
+			return false;
 		}
 
 
 	}
 
 	return true;
+}
+
+bool RuleManager::writeInFile(string filename, string text) {
+	try {
+		FILE* file = fopen(filename.c_str(), "w+");
+		if (file) {
+			fprintf(file, text.c_str());
+			fclose(file);
+		}
+		else
+			return false;
+		return true;
+	} catch (...) {
+		Logger::logError("Unable to write to file "+filename+"!");
+		return false;
+	}
 }
 
 Rule* RuleManager::loadIfRuleExists(string* command) {

@@ -15,7 +15,7 @@ class Logger {
 		static Logger logger_Instance;
 		string log_level;
 		string log_message;
-		const char *daemon_name;
+		const char *daemon_name = nullptr;
 
 		// no use of constructor - class is singleton
 		Logger(){}

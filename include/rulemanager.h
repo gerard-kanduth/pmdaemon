@@ -49,18 +49,24 @@ class RuleManager {
 			"CHECKS_BEFORE_ALERT"
 		};
 
-		const char* rules_directory;
+		const char* rules_directory = nullptr;
+		const char* daemon_name = nullptr;
+		const char* cgroup_root_dir = "/sys/fs/cgroup";
+		string subtree_control_file = "cgroup.subtree_control";
+		string cpu_max_file = "cpu.max";
+		string procs_file = "cgroup.procs";
+		string memory_high_file = "memory.high";
+		string memory_max_file = "memory.max";
+		string freezer_file = "cgroup.freeze";
 
 		map<string, Rule> rules;
-
-		const char* cgroup_root_dir = "/sys/fs/cgroup";
-		const char* daemon_name;
 
 		RuleReturn readRuleFile(string);
 		bool createCgroup(Rule*);
 		bool checkIfRuleIsValid(map<string, string>);
 		bool generateRuleFromFile(string);
 		bool registerRule(map<string, string>);
+		bool writeInFile(string, string);
 		void loadRules();
 		void showRuleContent(map<string, string>);
 

@@ -61,20 +61,20 @@ class Controller {
 		map<int,PenaltyListItem>::iterator it;
 
 		// settings object (contains all settings)
-		Settings* settings;
+		Settings* settings = nullptr;
 
 		// rules object (contains all loaded rules)
-		RuleManager* rulemanager;
+		RuleManager* rulemanager = nullptr;
 
 		// pointer for specific rule
-		Rule* specific_rule;
+		Rule* specific_rule = nullptr;
 
 		// the name of the daemon
 		const char* daemon_name;
 
 		// curl instance used for http logging
 		// libcurl, see: https://curl.se/libcurl
-		CURL* curl;
+		CURL* curl = nullptr;
 		CURLcode curl_result;
 
 		// the comand which will be constantly checked "2>&1" used to get stderr
@@ -92,7 +92,7 @@ class Controller {
 
 		// variable for hostname
 		char hostname_buffer[128];
-		const char* hostname;
+		const char* hostname = nullptr;
 
 		// helper variables
 		size_t next_semi_colon_pos;
