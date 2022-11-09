@@ -10,8 +10,10 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <typeinfo>
+#include <unistd.h>
 #include "logger.h"
 #include "settings.h"
+#include "utils.h"
 #include "rule.h"
 
 namespace fs = std::filesystem;
@@ -66,7 +68,6 @@ class RuleManager {
 		bool checkIfRuleIsValid(map<string, string>);
 		bool generateRuleFromFile(string);
 		bool registerRule(map<string, string>);
-		bool writeInFile(string, string);
 		void loadRules();
 		void showRuleContent(map<string, string>);
 

@@ -42,8 +42,11 @@ Controller::Controller(const char* daemon_name, Settings*& settings) {
 	}
 
 	// load rules if not deactivated in the settings
-	if (load_rules)
+	if (load_rules) {
+		if (!enableCgroupControllers())
+			exit(EXIT_FAILURE);
 		this->rulemanager = new RuleManager(this->daemon_name, settings->getRulesDir());
+	}
 
 }
 
@@ -94,6 +97,20 @@ bool Controller::doCheck() {
 		}
 	}
 	return true;
+}
+
+bool Controller::enableCgroupControllers() {
+	string cgrpsubcont_file = "/sys/fs/cgroup/cgroup.subtree_control";
+	Logger::logInfo("Enabling needed cgroup2 controllers ...");
+
+	if (Utils::writeToFile(cgrpsubcont_file, "+cpu +cpuset +memory +pids\n")) {
+		Logger::logInfo("Done!");
+		return true;
+	} else {
+		Logger::logError("Unable to enable controllers! Terminating.");
+		return false;
+	}
+
 }
 
 bool Controller::iterateProcessList(string check_result) {
@@ -266,13 +283,12 @@ bool Controller::checkPenaltyList(Process* process, string penalty_cause) {
 }
 
 bool Controller::doLimit(Process* process) {
-	//TODO
-	return true;
-}
-
-bool Controller::addPIDtoCgroup() {
-	//TODO
-	return true;
+	bool success = false;
+	string file = std::string(this->specific_rule->cgroup_procs_file);
+	string pid = to_string(process->pid);
+	cout << file << " and " << pid << endl;
+	success = Utils::writeToFile(file, pid);
+	return success;
 }
 
 // collect information about the process

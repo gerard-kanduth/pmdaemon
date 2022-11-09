@@ -141,6 +141,7 @@ class Controller {
 		bool curlPostJSON(const char*);
 		bool checkPenaltyList(Process*, string);
 		bool doLimit(Process*);
+		bool enableCgroupControllers();
 		string readProcFile(string, int*);
 		void doAlert(ProcessInfo);
 		void graylogHTTPAlert(ProcessInfo);

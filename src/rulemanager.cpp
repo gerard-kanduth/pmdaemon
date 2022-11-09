@@ -194,36 +194,41 @@ bool RuleManager::createCgroup(Rule* rule) {
 			Logger::logInfo("  |-> Cgroup "+rule->cgroup_root_dir+" already exists!");
 		}
 		else {
-			if (mkdir(rule->cgroup_root_dir.c_str(), 0750) != -1) {
+
+			if (mkdir(rule->cgroup_root_dir.c_str(), 0755) != -1) {
 				Logger::logInfo("  |-> Created cgroup "+rule->cgroup_root_dir);
+
+				// write all needed values into the cgroup controller files
+				// if (!Utils::writeToFile(rule->cgroup_subtree_control_file, "+pids +cpu +cpuset +memory")) {
+					// Logger::logError("Something went wrong while modifying "+rule->cgroup_subtree_control_file);
+					// return false;
+				// }
+				// return true;
+
 			}
 			else {
-				Logger::logError("Unable to create cgroup "+std::string(rule->cgroup_root_dir));
+				Logger::logError("Unable to create cgroup "+rule->cgroup_root_dir);
 				return false;
 			}
-		}
-
-		// write all needed values into the cgroup controller files
-		if (!writeInFile(rule->cgroup_subtree_control_file, "+pids +cpu +cpuset +memory")) {
-			Logger::logError("Something went wrong while modifying "+rule->cgroup_subtree_control_file);
-			return false;
 		}
 
 		// prepare the freezer file for the given cgroup
 		string freeze;
 		if (rule->freeze) {	freeze = "1"; }
 		else { freeze = "0"; }
-		if (!writeInFile(rule->cgroup_freezer_file, freeze)) {
+		if (!Utils::writeToFile(rule->cgroup_freezer_file, freeze)) {
 			Logger::logError("Something went wrong while modifying "+rule->cgroup_freezer_file);
 			return false;
 		}
 
 		// prepare the cpu.max file for the given cgroup
 		string cpu_max;
-		if (rule->limit_cpu_percent > 0) { cpu_max = to_string(rule->limit_cpu_percent)+"000 100000"; }
-		else { cpu_max = "max 100000"; }
-		if (!writeInFile(rule->cgroup_cpu_max_file, cpu_max)) {
+		if (rule->limit_cpu_percent > 0) {
+			cpu_max = to_string(rule->limit_cpu_percent)+"000 100000";
+		} else { cpu_max += "max 100000"; }
+		if (!Utils::writeToFile(rule->cgroup_cpu_max_file, cpu_max)) {
 			Logger::logError("Something went wrong while modifying "+rule->cgroup_cpu_max_file);
+			cerr << "Something went wrong with wrtinting!!!\n";
 			return false;
 		}
 
@@ -231,12 +236,12 @@ bool RuleManager::createCgroup(Rule* rule) {
 		string memory_value;
 		if (rule->limit_memory_value > 0) { memory_value = to_string(rule->limit_memory_value); }
 		else { memory_value = "max"; }
-		if (!writeInFile(rule->cgroup_memory_high_file, memory_value)) {
+		if (!Utils::writeToFile(rule->cgroup_memory_high_file, memory_value)) {
 			Logger::logError("Something went wrong while modifying "+rule->cgroup_memory_high_file);
 			return false;
 		}
 		if (rule->oom_kill_enabled) {
-			if (!writeInFile(rule->cgroup_memory_max_file, memory_value)) {
+			if (!Utils::writeToFile(rule->cgroup_memory_max_file, memory_value)) {
 				Logger::logError("Something went wrong while modifying "+rule->cgroup_memory_max_file);
 				return false;
 			}
@@ -245,22 +250,6 @@ bool RuleManager::createCgroup(Rule* rule) {
 	}
 
 	return true;
-}
-
-bool RuleManager::writeInFile(string filename, string text) {
-	try {
-		FILE* file = fopen(filename.c_str(), "w+");
-		if (file) {
-			fprintf(file, text.c_str());
-			fclose(file);
-		}
-		else
-			return false;
-		return true;
-	} catch (...) {
-		Logger::logError("Unable to write to file "+filename+"!");
-		return false;
-	}
 }
 
 Rule* RuleManager::loadIfRuleExists(string command) {
