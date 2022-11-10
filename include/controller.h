@@ -22,6 +22,12 @@ class Controller {
 
 	private:
 
+		// cgroup list struct
+		struct CgroupListItem {
+			int pid;
+			string cgroup;
+		};
+
 		// struct for a process
 		struct Process {
 			int pid;
@@ -38,7 +44,9 @@ class Controller {
 			int penalty_counter;
 			int cooldown_counter;
 			string penalty_cause;
+			string cgroup_name;
 			bool alerted = false;
+			bool limited = false;
 		};
 
 		// advanced process information
@@ -142,10 +150,11 @@ class Controller {
 		bool curlPostJSON(const char*);
 		bool checkIfCgroupEmpty(string*, int*);
 		bool checkPenaltyList(Process*, string);
+		bool cleanupPenaltyList();
 		bool createCgroup(string*, int*);
 		bool doLimit(Process*);
 		bool enableCgroupControllers();
-		bool removeCgroup(string*, int*);
+		bool removeCgroup(string);
 		string readProcFile(string, int*);
 		void doAlert(ProcessInfo);
 		void graylogHTTPAlert(ProcessInfo);

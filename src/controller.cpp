@@ -81,7 +81,11 @@ bool Controller::doCheck() {
 			throw 1;
 
 		// iterate over process-list and check processes
-		if (iterateProcessList(check_result) == false)
+		if (!iterateProcessList(check_result))
+			throw 1;
+
+		// penalty-list needs to be cleaned
+		if (!cleanupPenaltyList())
 			throw 1;
 
 	// catch if an error occurs during check-cycle
@@ -115,7 +119,9 @@ bool Controller::enableCgroupControllers() {
 
 bool Controller::iterateProcessList(string check_result) {
 	try {
+
 		std::istringstream ps_output(check_result);
+
 		while(getline(ps_output, ps_line)) {
 
 			// retrieve the pid
@@ -185,8 +191,6 @@ bool Controller::checkProcess(Process* process) {
 
 		if (this->specific_rule) {
 
-			cout << "process command " << process->command << "\n";
-
 			// skip command if the NO_CHECK setting is set in rule
 			if (this->specific_rule->no_check) {
 				if (Logger::getLogLevel() == "debug")
@@ -210,7 +214,6 @@ bool Controller::checkProcess(Process* process) {
 			this->checks_before_alert = &default_checks_before_alert;
 		}
 	}
-
 
 	if (process->pcpu > *this->cpu_trigger_threshold) {
 		Logger::logDebug("Process with PID "+to_string(process->pid)+ " has a load of "+to_string(process->pcpu));
@@ -240,6 +243,7 @@ bool Controller::checkProcess(Process* process) {
 
 // check if PID is on penalty-list, if not add it
 bool Controller::checkPenaltyList(Process* process, string penalty_cause) {
+
 	// if pid is in penalty-list raise counter
 	it = penalty_list.find(process->pid);
 	if (it != penalty_list.end() && it->second.penalty_cause == penalty_cause) {
@@ -271,13 +275,50 @@ bool Controller::checkPenaltyList(Process* process, string penalty_cause) {
 	}
 	// add the pid to the penalty-list if not found
 	else {
+
 		PenaltyListItem penalty_pid;
 		penalty_pid.pid = process->pid;
 		penalty_pid.penalty_counter = 1;
 		penalty_pid.cooldown_counter = checks_cooldown;
 		penalty_pid.penalty_cause = penalty_cause;
+		if (this->specific_rule->enable_limiting) {
+			string cgroup_name = this->specific_rule->cgroup_root_dir;
+			cgroup_name += "/pid-";
+			cgroup_name += to_string(process->pid);
+			penalty_pid.cgroup_name = cgroup_name;
+		} else { penalty_pid.cgroup_name = nullptr; }
+		penalty_pid.limited = this->specific_rule->enable_limiting;
+
 		penalty_list[process->pid] = penalty_pid;
 		Logger::logDebug("Added "+to_string(process->pid)+" to penalty-list due to "+penalty_cause+".");
+	}
+	return true;
+}
+
+bool Controller::cleanupPenaltyList() {
+
+	if (!penalty_list.empty()) {
+
+		it = penalty_list.begin();
+		while (it != penalty_list.end()) {
+
+			std::string pid = to_string(it->first);
+
+			if (fs::exists("/proc/"+to_string(it->first))) {
+				it++;
+			} else {
+				it = penalty_list.find(it->first);
+
+				if (it->second.limited) {
+					removeCgroup(it->second.cgroup_name);
+				}
+
+				Logger::logInfo("Removing PID "+pid+" from penalty-list");
+				penalty_list.erase(it);
+				it = penalty_list.end();
+				break;
+			}
+		}
 	}
 	return true;
 }
@@ -360,11 +401,7 @@ bool Controller::doLimit(Process* process) {
 	return addPidToCgroup(&this->specific_rule->cgroup_root_dir, &process->pid);
 }
 
-bool Controller::removeCgroup(string* cgroup_parent_group, int* pid) {
-
-	string cgroup = *cgroup_parent_group;
-	cgroup += "/pid-";
-	cgroup += to_string(*pid);
+bool Controller::removeCgroup(string cgroup) {
 
 	if (std::filesystem::remove(cgroup)) {
 		Logger::logInfo("Removed cgroup "+cgroup);
@@ -424,7 +461,7 @@ string Controller::readProcFile(string filename, int* pid) {
 }
 
 void Controller::doAlert(ProcessInfo process_info) {
-	cout << "[[ ALERT ]] PID: "+to_string(process_info._pid)+" COMMAND: "+process_info._command+" CAUSE: "+process_info._cause+"\n";
+	// cout << "[[ ALERT ]] PID: "+to_string(process_info._pid)+" COMMAND: "+process_info._command+" CAUSE: "+process_info._cause+"\n";
 	if (graylog_enabled) {
 		if (graylog_transport_method == "http") {
 			graylogHTTPAlert(process_info);
