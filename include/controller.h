@@ -138,10 +138,14 @@ class Controller {
 
 		// private functions
 		ProcessInfo collectProcessInfo(Process*, string);
+		bool addPidToCgroup(string*, int*);
 		bool curlPostJSON(const char*);
+		bool checkIfCgroupEmpty(string*, int*);
 		bool checkPenaltyList(Process*, string);
+		bool createCgroup(string*, int*);
 		bool doLimit(Process*);
 		bool enableCgroupControllers();
+		bool removeCgroup(string*, int*);
 		string readProcFile(string, int*);
 		void doAlert(ProcessInfo);
 		void graylogHTTPAlert(ProcessInfo);

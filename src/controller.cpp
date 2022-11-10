@@ -282,13 +282,98 @@ bool Controller::checkPenaltyList(Process* process, string penalty_cause) {
 	return true;
 }
 
+bool Controller::addPidToCgroup(string* cgroup_parent_group, int* pid) {
+
+	string cgroup = *cgroup_parent_group;
+	cgroup += "/pid-";
+	cgroup += to_string(*pid);
+
+	string cgroup_procs_file = cgroup;
+	cgroup_procs_file += "/cgroup.procs";
+
+	if (!fs::exists(cgroup.c_str())) {
+		createCgroup(cgroup_parent_group, pid);
+	}
+
+	FILE* file;
+
+	file = fopen(cgroup_procs_file.c_str(), "w");
+
+    if (file) {
+        fputs(to_string(*pid).c_str(), file);
+    }
+	else {
+		Logger::logError("Unable to write to file "+cgroup_procs_file+"!");
+		return false;
+	}
+
+	fclose(file);
+	return true;
+
+}
+
+bool Controller::checkIfCgroupEmpty(string* cgroup_parent_group, int* pid) {
+
+	string proc_file_name = *cgroup_parent_group;
+	proc_file_name += "/pid-";
+	proc_file_name += to_string(*pid);
+	proc_file_name += "/pids.current";
+
+	fstream proc_file;
+	proc_file.open(proc_file_name, ios::in);
+
+	if (proc_file.is_open()) {
+		string line;
+		getline(proc_file, line);
+		proc_file.close();
+
+		if (stoi(line) == 0)
+			return true;
+		else
+			return false;
+
+	} else {
+		Logger::logError("Unable to read file ");
+		proc_file.close();
+		return false;
+	}
+
+}
+
+bool Controller::createCgroup(string* cgroup_parent_group, int* pid) {
+
+	string cgroup = *cgroup_parent_group;
+	cgroup += "/pid-";
+	cgroup += to_string(*pid);
+
+	if (mkdir(cgroup.c_str(), 0755) != -1) {
+		Logger::logInfo("Created cgroup "+cgroup);
+		return true;
+	}
+	else {
+		Logger::logError("Unable to create cgroup "+cgroup);
+		return false;
+	}
+}
+
 bool Controller::doLimit(Process* process) {
-	bool success = false;
-	string file = std::string(this->specific_rule->cgroup_procs_file);
-	string pid = to_string(process->pid);
-	cout << file << " and " << pid << endl;
-	success = Utils::writeToFile(file, pid);
-	return success;
+	return addPidToCgroup(&this->specific_rule->cgroup_root_dir, &process->pid);
+}
+
+bool Controller::removeCgroup(string* cgroup_parent_group, int* pid) {
+
+	string cgroup = *cgroup_parent_group;
+	cgroup += "/pid-";
+	cgroup += to_string(*pid);
+
+	if (std::filesystem::remove(cgroup)) {
+		Logger::logInfo("Removed cgroup "+cgroup);
+		return true;
+	}
+	else {
+		Logger::logError("Unable to remove cgroup "+cgroup);
+		return false;
+	}
 }
 
 // collect information about the process
