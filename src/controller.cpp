@@ -200,8 +200,8 @@ bool Controller::checkProcess(Process* process) {
 				this->cpu_trigger_threshold = &this->specific_rule->cpu_trigger_threshold;
 				this->mem_trigger_threshold = &this->specific_rule->mem_trigger_threshold;
 				this->checks_before_alert = &this->specific_rule->checks_before_alert;
-
 			}
+
 		} else {
 
 			// do not check processes if SPECIFIC_RULES_CHECK_ONLY is enabled
@@ -238,7 +238,6 @@ bool Controller::checkProcess(Process* process) {
 	}
 
 	return true;
-
 }
 
 // check if PID is on penalty-list, if not add it
@@ -248,20 +247,34 @@ bool Controller::checkPenaltyList(Process* process, string penalty_cause) {
 	it = penalty_list.find(process->pid);
 	if (it != penalty_list.end() && it->second.penalty_cause == penalty_cause) {
 		Logger::logDebug("Process with PID "+to_string(process->pid)+" already on penalty-list.");
-		it->second.penalty_counter++;
+		if (it->second.in_cgroup == false) {
+			it->second.penalty_counter++;
+		}
 
 		// alert if not already alerted
-		if (it->second.penalty_counter >= *this->checks_before_alert && it->second.alerted == false ) {
-			doAlert(collectProcessInfo(process, penalty_cause));
+		if (it->second.penalty_counter >= *this->checks_before_alert && it->second.alerted == false && it->second.in_cgroup == false) {
+			graylogAlert(collectProcessInfo(process, penalty_cause));
 			it->second.alerted = true;
 			if (this->specific_rule->enable_limiting) {
 				if(doLimit(process)) {
+					it->second.in_cgroup = true;
 					Logger::logInfo("["+this->specific_rule->rule_name+"] Added PID "+to_string(process->pid)+" to cgroup "+this->specific_rule->cgroup_name);
+					graylogLimitInfo(process);
 				} else {
 					Logger::logError("["+this->specific_rule->rule_name+"] Unable to add PID "+to_string(process->pid)+" to cgroup "+this->specific_rule->cgroup_name);
 				}
 			}
 		}
+
+		// pid is already in cgroup, therefore only discard pid from penalty_list if cgroup is no longer present
+		else if (it->second.in_cgroup) {
+			if (!fs::exists(it->second.cgroup_name)) {
+				penalty_list.erase(it);
+				it = penalty_list.end();
+			}
+			return true;
+		}
+
 		// decrease cooldown-counter if already alerted
 		else {
 			// check if cooldown-counter not 0, otherwise remove pid from list
@@ -273,6 +286,7 @@ bool Controller::checkPenaltyList(Process* process, string penalty_cause) {
 			}
 		}
 	}
+
 	// add the pid to the penalty-list if not found
 	else {
 
@@ -395,6 +409,7 @@ bool Controller::createCgroup(string* cgroup_parent_group, int* pid) {
 		Logger::logError("Unable to create cgroup "+cgroup);
 		return false;
 	}
+
 }
 
 bool Controller::doLimit(Process* process) {
@@ -441,7 +456,7 @@ Controller::ProcessInfo Controller::collectProcessInfo(Process* process, string 
 	return process_info;
 }
 
-// used to read pseudo-files from /proc/<pid>/ - see https://linux.die.net/man/5/proc
+// used to read files from pseudo-filesystem from /proc/<pid>/ - see https://linux.die.net/man/5/proc
 string Controller::readProcFile(string filename, int* pid) {
 	try {
 		string proc_file_content;
@@ -460,8 +475,8 @@ string Controller::readProcFile(string filename, int* pid) {
 	}
 }
 
-void Controller::doAlert(ProcessInfo process_info) {
-	// cout << "[[ ALERT ]] PID: "+to_string(process_info._pid)+" COMMAND: "+process_info._command+" CAUSE: "+process_info._cause+"\n";
+void Controller::graylogAlert(ProcessInfo process_info) {
+
 	if (graylog_enabled) {
 		if (graylog_transport_method == "http") {
 			graylogHTTPAlert(process_info);
@@ -475,6 +490,21 @@ void Controller::doAlert(ProcessInfo process_info) {
 	}
 }
 
+void Controller::graylogLimitInfo(Process* process) {
+
+	if (graylog_enabled) {
+		if (graylog_transport_method == "http") {
+			graylogHTTPlimitInfo(process);
+		}
+		else if (graylog_transport_method == "udp") {
+			graylogUDPlimitInfo(process);
+		}
+		else if (graylog_transport_method == "tcp") {
+			graylogTCPlimitInfo(process);
+		}
+	}
+}
+
 // define which data should be included into the json_data
 void Controller::graylogHTTPAlert(ProcessInfo process_info) {
 
@@ -484,15 +514,15 @@ void Controller::graylogHTTPAlert(ProcessInfo process_info) {
 
 	string short_message;
 	if (process_info._cause == "cpu")
-		short_message = "Process with PID "+to_string(process_info._pid)+" produces a load of "+limit_pcpu+"!";
+		short_message = "[ ALERT ] Process with PID "+to_string(process_info._pid)+" produces a load of "+limit_pcpu+"!";
 	else if (process_info._cause == "mem")
-		short_message = "Process with PID "+to_string(process_info._pid)+" is using "+limit_pmem+" of RAM!";
+		short_message = "[ ALERT ] Process with PID "+to_string(process_info._pid)+" is using "+limit_pmem+" of RAM!";
 	else if (process_info._cause == "zombie")
-		short_message = "Process with PID "+to_string(process_info._pid)+" has changed the state to ZOMBIE!";
+		short_message = "[ ALERT ] Process with PID "+to_string(process_info._pid)+" has changed the state to ZOMBIE!";
 	else if (process_info._cause == "dstate")
-		short_message = "Process with PID "+to_string(process_info._pid)+" has changed the state to UNINTERRUPTIBLE SLEEP!";
+		short_message = "[ ALERT ] Process with PID "+to_string(process_info._pid)+" has changed the state to UNINTERRUPTIBLE SLEEP!";
 	else
-		short_message = "No short-message!";
+		short_message = "[ ERROR ] No short-message!";
 
 	// the json-body which will be send
 	string json_data = "{"
@@ -522,6 +552,36 @@ void Controller::graylogUDPAlert(ProcessInfo process_info) {
 }
 
 void Controller::graylogTCPAlert(ProcessInfo process_info) {
+	// TODO
+}
+
+void Controller::graylogHTTPlimitInfo(Process* process) {
+
+	// the json-body which will be send
+	string short_message = "[ LIMIT ] Process with PID "+to_string(process->pid)+" was added to cgroup!";
+
+	string json_data = "{"
+		"\"version\": \""+to_string(graylog_message_version)+"\","
+		"\"host\": \""+std::string(hostname)+"\","
+		"\"short_message\": \""+short_message+"\","
+		"\"level\": "+to_string(graylog_message_level)+","
+		"\"_pid\": "+to_string(process->pid)+","
+		"\"_user\": \""+process->user+"\","
+		"\"_state\": \""+process->state+"\","
+		"\"_cgroup\": \""+readProcFile("cgroup", &process->pid)+"\","
+		"\"_command\": \""+process->command+"\"" 
+		"}";
+
+	// send it via curl library command
+	curlPostJSON(json_data.c_str());
+
+}
+
+void Controller::graylogUDPlimitInfo(Process* process) {
+	// TODO
+}
+
+void Controller::graylogTCPlimitInfo(Process* process) {
 	// TODO
 }
 

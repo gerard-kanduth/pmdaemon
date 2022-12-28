@@ -46,6 +46,7 @@ class Controller {
 			string penalty_cause;
 			string cgroup_name;
 			bool alerted = false;
+			bool in_cgroup = false;
 			bool limited = false;
 		};
 
@@ -156,10 +157,14 @@ class Controller {
 		bool enableCgroupControllers();
 		bool removeCgroup(string);
 		string readProcFile(string, int*);
-		void doAlert(ProcessInfo);
+		void graylogAlert(ProcessInfo);
 		void graylogHTTPAlert(ProcessInfo);
 		void graylogUDPAlert(ProcessInfo);
 		void graylogTCPAlert(ProcessInfo);
+		void graylogLimitInfo(Process*);
+		void graylogHTTPlimitInfo(Process*);
+		void graylogUDPlimitInfo(Process*);
+		void graylogTCPlimitInfo(Process*);
 
 	public:
 
