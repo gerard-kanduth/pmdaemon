@@ -126,6 +126,10 @@ class Controller {
 		int default_checks_before_alert;
 		int checks_cooldown;
 
+		// enable_limiting is only necessary for specific_rules
+		bool default_enable_limiting = false;
+		bool* enable_limiting;
+
 		// the defaults will be used if LOAD_RULES is disabled
 		int* checks_before_alert = &default_checks_before_alert;
 		double* cpu_trigger_threshold = &default_cpu_trigger_threshold;

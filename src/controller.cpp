@@ -200,18 +200,22 @@ bool Controller::checkProcess(Process* process) {
 				this->cpu_trigger_threshold = &this->specific_rule->cpu_trigger_threshold;
 				this->mem_trigger_threshold = &this->specific_rule->mem_trigger_threshold;
 				this->checks_before_alert = &this->specific_rule->checks_before_alert;
+				this->enable_limiting = &this->specific_rule->enable_limiting;
 			}
 
 		} else {
+
+			// Needs to be set before dropping out if SPECIFIC_RULES_CHECK_ONLY is enabled
+			this->cpu_trigger_threshold = &this->default_cpu_trigger_threshold;
+			this->mem_trigger_threshold = &this->default_mem_trigger_threshold;
+			this->checks_before_alert = &this->default_checks_before_alert;
+			this->enable_limiting = &this->default_enable_limiting;
 
 			// do not check processes if SPECIFIC_RULES_CHECK_ONLY is enabled
 			if (this->specific_rules_check_only) {
 				return true;
 			}
 
-			this->cpu_trigger_threshold = &default_cpu_trigger_threshold;
-			this->mem_trigger_threshold = &default_mem_trigger_threshold;
-			this->checks_before_alert = &default_checks_before_alert;
 		}
 	}
 
@@ -238,6 +242,7 @@ bool Controller::checkProcess(Process* process) {
 	}
 
 	return true;
+
 }
 
 // check if PID is on penalty-list, if not add it
@@ -255,7 +260,7 @@ bool Controller::checkPenaltyList(Process* process, string penalty_cause) {
 		if (it->second.penalty_counter >= *this->checks_before_alert && it->second.alerted == false && it->second.in_cgroup == false) {
 			graylogAlert(collectProcessInfo(process, penalty_cause));
 			it->second.alerted = true;
-			if (this->specific_rule->enable_limiting) {
+			if (*this->enable_limiting) {
 				if(doLimit(process)) {
 					it->second.in_cgroup = true;
 					Logger::logInfo("["+this->specific_rule->rule_name+"] Added PID "+to_string(process->pid)+" to cgroup "+this->specific_rule->cgroup_name);
@@ -295,13 +300,13 @@ bool Controller::checkPenaltyList(Process* process, string penalty_cause) {
 		penalty_pid.penalty_counter = 1;
 		penalty_pid.cooldown_counter = checks_cooldown;
 		penalty_pid.penalty_cause = penalty_cause;
-		if (this->specific_rule->enable_limiting) {
+		if (*this->enable_limiting) {
 			string cgroup_name = this->specific_rule->cgroup_root_dir;
 			cgroup_name += "/pid-";
 			cgroup_name += to_string(process->pid);
 			penalty_pid.cgroup_name = cgroup_name;
-		} else { penalty_pid.cgroup_name = nullptr; }
-		penalty_pid.limited = this->specific_rule->enable_limiting;
+		} else { penalty_pid.cgroup_name = "none"; }
+		penalty_pid.limited = *this->enable_limiting;
 
 		penalty_list[process->pid] = penalty_pid;
 		Logger::logDebug("Added "+to_string(process->pid)+" to penalty-list due to "+penalty_cause+".");
