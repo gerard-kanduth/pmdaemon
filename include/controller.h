@@ -126,9 +126,12 @@ class Controller {
 		int default_checks_before_alert;
 		int checks_cooldown;
 
-		// enable_limiting is only necessary for specific_rules
+		// enable_limiting can only be enabled in specific_rules
 		bool default_enable_limiting = false;
-		bool* enable_limiting;
+		bool* enable_limiting = &default_enable_limiting;
+
+		// send_process_files can only be disabled in specific_rules
+		bool send_process_files;
 
 		// the defaults will be used if LOAD_RULES is disabled
 		int* checks_before_alert = &default_checks_before_alert;

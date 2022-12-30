@@ -93,7 +93,7 @@ bool RuleManager::registerRule(map<string, string> file_content) {
 		(file_content["FREEZE"] == "1") ? rule.freeze = true : rule.freeze = false;
 		(file_content["OOM_KILL_ENABLED"] == "1") ? rule.oom_kill_enabled = true : rule.oom_kill_enabled = false;
 		(file_content["PID_KILL_ENABLED"] == "1") ? rule.pid_kill_enabled = true : rule.pid_kill_enabled = false;
-		(file_content["SEND_PROCESS_FILES"] == "1") ? rule.send_process_files = true : rule.send_process_files = false;
+		(file_content["SEND_PROCESS_FILES"] == "0") ? rule.send_process_files = false : rule.send_process_files = true;
 		(file_content["ENABLE_LIMITING"] == "1") ? rule.enable_limiting = true : rule.enable_limiting = false;
 
 		// cgroup name (daemon_name+'-'+rule_name)

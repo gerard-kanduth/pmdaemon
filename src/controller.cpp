@@ -201,6 +201,7 @@ bool Controller::checkProcess(Process* process) {
 				this->mem_trigger_threshold = &this->specific_rule->mem_trigger_threshold;
 				this->checks_before_alert = &this->specific_rule->checks_before_alert;
 				this->enable_limiting = &this->specific_rule->enable_limiting;
+				this->send_process_files = this->specific_rule->send_process_files;
 			}
 
 		} else {
@@ -210,6 +211,7 @@ bool Controller::checkProcess(Process* process) {
 			this->mem_trigger_threshold = &this->default_mem_trigger_threshold;
 			this->checks_before_alert = &this->default_checks_before_alert;
 			this->enable_limiting = &this->default_enable_limiting;
+			this->send_process_files = true;
 
 			// do not check processes if SPECIFIC_RULES_CHECK_ONLY is enabled
 			if (this->specific_rules_check_only) {
@@ -258,8 +260,12 @@ bool Controller::checkPenaltyList(Process* process, string penalty_cause) {
 
 		// alert if not already alerted
 		if (it->second.penalty_counter >= *this->checks_before_alert && it->second.alerted == false && it->second.in_cgroup == false) {
-			graylogAlert(collectProcessInfo(process, penalty_cause));
+
+			if (this->send_process_files) {
+				graylogAlert(collectProcessInfo(process, penalty_cause));
+			}
 			it->second.alerted = true;
+
 			if (*this->enable_limiting) {
 				if(doLimit(process)) {
 					it->second.in_cgroup = true;
