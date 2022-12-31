@@ -3,7 +3,7 @@
 RuleManager::RuleManager(const char* daemon_name, string rules_directory) {
 	this->daemon_name = daemon_name;
 	this->rules_directory = rules_directory.c_str();
-	Logger::logInfo("Loading available rules from " + std::string(this->rules_directory));
+	Logger::logNotice("Loading available rules from " + std::string(this->rules_directory));
 	loadRules();
 }
 
@@ -289,7 +289,35 @@ RuleManager::RuleReturn RuleManager::readRuleFile(string filename) {
 }
 
 // for debug purpose only
-void RuleManager::showRuleContent(map<string, string> rule) {
-	for (auto& s : rule)
-		std::cout << s.first << " -> " << s.second << '\n';
+void RuleManager::showRuleContent(Rule rule) {
+	Logger::logInfo("-----------------");
+	Logger::logInfo(rule.rule_name);
+	Logger::logInfo("-----------------");
+	Logger::logInfo("command: "+rule.command);
+	Logger::logInfo("no_check: "+to_string(rule.no_check));
+	Logger::logInfo("cpu_trigger_threshold: "+to_string(rule.cpu_trigger_threshold));
+	Logger::logInfo("mem_trigger_threshold: "+to_string(rule.mem_trigger_threshold));
+	Logger::logInfo("freeze: "+to_string(rule.freeze));
+	Logger::logInfo("oom_kill_enabled: "+to_string(rule.oom_kill_enabled));
+	Logger::logInfo("pid_kill_enabled: "+to_string(rule.pid_kill_enabled));
+	Logger::logInfo("send_process_files: "+to_string(rule.send_process_files));
+	Logger::logInfo("enable_limiting: "+to_string(rule.enable_limiting));
+	Logger::logInfo("checks_before_alert: "+to_string(rule.checks_before_alert));
+	Logger::logInfo("limit_cpu_percent: "+to_string(rule.limit_cpu_percent));
+	Logger::logInfo("limit_memory_value: "+to_string(rule.limit_memory_value));
+	Logger::logInfo("cgroup_root_dir: "+rule.cgroup_root_dir);
+	Logger::logInfo("cgroup_subtree_control_file: "+rule.cgroup_subtree_control_file);
+	Logger::logInfo("cgroup_name: "+rule.cgroup_name);
+	Logger::logInfo("cgroup_cpu_max_file: "+rule.cgroup_cpu_max_file);
+	Logger::logInfo("cgroup_procs_file: "+rule.cgroup_procs_file);
+	Logger::logInfo("cgroup_memory_high_file: "+rule.cgroup_memory_high_file);
+	Logger::logInfo("cgroup_memory_max_file: "+rule.cgroup_memory_max_file);
+	Logger::logInfo("cgroup_freezer_file: "+rule.cgroup_freezer_file);
+	Logger::logInfo("-----------------");
+}
+
+void RuleManager::showRules() {
+	for (auto& r : this->rules) {
+		showRuleContent(r.second);
+	}
 }

@@ -29,6 +29,7 @@ class Settings {
 			"CPU_TRIGGER_THRESHOLD",
 			"MEM_TRIGGER_THRESHOLD",
 			"STATE_TRIGGER",
+			"TERM_CGROUP_CLEANUP",
 			"GRAYLOG_ENABLED",
 			"GRAYLOG_TRANSFER_METHOD",
 			"GRAYLOG_FQDN",
@@ -54,6 +55,7 @@ class Settings {
 		bool getStateTrigger();
 		bool getLoadRules();
 		bool getSpecificRulesCheckOnly();
+		bool getTermCgroupCleanup();
 		double getCpuTriggerThreshold();
 		double getMemTriggerThreshold();
 		int getChecksBeforeAlert();

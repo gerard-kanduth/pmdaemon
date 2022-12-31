@@ -32,7 +32,7 @@ bool Settings::readSettings() {
 
 bool Settings::getGraylogEnabled() {
 	try {
-		int graylog_enabled = stoi(settings["GRAYLOG_ENABLED"]);
+		int graylog_enabled = stoi(this->settings["GRAYLOG_ENABLED"]);
 		if (std::floor(graylog_enabled) == graylog_enabled && graylog_enabled == 0 || graylog_enabled == 1) {
 			Logger::logInfo("Setting GRAYLOG_ENABLE to \'" + to_string(graylog_enabled) + "\'");
 			if (graylog_enabled == 1)
@@ -50,7 +50,7 @@ bool Settings::getGraylogEnabled() {
 
 bool Settings::getGraylogHTTPSecure() {
 	try {
-		int graylog_http_secure = stoi(settings["GRAYLOG_HTTP_SECURE"]);
+		int graylog_http_secure = stoi(this->settings["GRAYLOG_HTTP_SECURE"]);
 		if (std::floor(graylog_http_secure) == graylog_http_secure && graylog_http_secure == 0 || graylog_http_secure == 1) {
 			Logger::logInfo("Setting GRAYLOG_HTTP_SECURE to \'" + to_string(graylog_http_secure) + "\'");
 			if (graylog_http_secure == 1)
@@ -68,7 +68,7 @@ bool Settings::getGraylogHTTPSecure() {
 
 bool Settings::getStateTrigger() {
 	try {
-		int state_trigger = stoi(settings["STATE_TRIGGER"]);
+		int state_trigger = stoi(this->settings["STATE_TRIGGER"]);
 		if (std::floor(state_trigger) == state_trigger && state_trigger == 0 || state_trigger == 1) {
 			Logger::logInfo("Setting STATE_TRIGGER to \'" + to_string(state_trigger) + "\'");
 			if (state_trigger == 1)
@@ -86,7 +86,7 @@ bool Settings::getStateTrigger() {
 
 bool Settings::getLoadRules() {
 	try {
-		int load_rules = stoi(settings["LOAD_RULES"]);
+		int load_rules = stoi(this->settings["LOAD_RULES"]);
 		if (std::floor(load_rules) == load_rules && load_rules == 0 || load_rules == 1) {
 			Logger::logInfo("Setting LOAD_RULES to \'" + to_string(load_rules) + "\'");
 			if (load_rules == 1)
@@ -104,7 +104,7 @@ bool Settings::getLoadRules() {
 
 bool Settings::getSpecificRulesCheckOnly() {
 	try {
-		int specific_rules_check_only = stoi(settings["SPECIFIC_RULES_CHECK_ONLY"]);
+		int specific_rules_check_only = stoi(this->settings["SPECIFIC_RULES_CHECK_ONLY"]);
 		if (std::floor(specific_rules_check_only) == specific_rules_check_only && specific_rules_check_only == 0 || specific_rules_check_only == 1) {
 			Logger::logInfo("Setting SPECIFIC_RULES_CHECK_ONLY to \'" + to_string(specific_rules_check_only) + "\'");
 			if (specific_rules_check_only == 1)
@@ -120,9 +120,27 @@ bool Settings::getSpecificRulesCheckOnly() {
 	}
 }
 
+bool Settings::getTermCgroupCleanup() {
+	try {
+		int term_cgroup_cleanup = stoi(this->settings["TERM_CGROUP_CLEANUP"]);
+		if (std::floor(term_cgroup_cleanup) == term_cgroup_cleanup && term_cgroup_cleanup == 0 || term_cgroup_cleanup == 1) {
+			Logger::logInfo("Setting TERM_CGROUP_CLEANUP to \'" + to_string(term_cgroup_cleanup) + "\'");
+			if (term_cgroup_cleanup == 1)
+				return true;
+			else
+				return false;
+		}
+		else
+			throw 2;
+	} catch (...) {
+		Logger::logError("Invalid TERM_CGROUP_CLEANUP value in configuration! Using '0'.");
+		return false;
+	}
+}
+
 double Settings::getCpuTriggerThreshold() {
 	try {
-		string ctt = settings["CPU_TRIGGER_THRESHOLD"];
+		string ctt = this->settings["CPU_TRIGGER_THRESHOLD"];
 		double cpu_trigger_threshold = stod(ctt.c_str());
 		char buffer[6];
 		sprintf(buffer, "%.2f", cpu_trigger_threshold);
@@ -137,7 +155,7 @@ double Settings::getCpuTriggerThreshold() {
 
 double Settings::getMemTriggerThreshold() {
 	try {
-		string mtt = settings["MEM_TRIGGER_THRESHOLD"];
+		string mtt = this->settings["MEM_TRIGGER_THRESHOLD"];
 		double mem_trigger_threshold = stod(mtt.c_str());
 		char buffer[6];
 		sprintf(buffer, "%.2f", mem_trigger_threshold);
@@ -152,7 +170,7 @@ double Settings::getMemTriggerThreshold() {
 
 int Settings::getGraylogPort() {
 	try {
-		int graylog_port = stoi(settings["GRAYLOG_PORT"]);
+		int graylog_port = stoi(this->settings["GRAYLOG_PORT"]);
 		if (std::floor(graylog_port) == graylog_port && graylog_port >= 0) {
 			Logger::logInfo("Setting GRAYLOG_PORT to \'" + to_string(graylog_port) + "\'");
 			return graylog_port;
@@ -167,7 +185,7 @@ int Settings::getGraylogPort() {
 
 int Settings::getCheckInterval() {
 	try {
-		int check_interval = stoi(settings["CHECK_INTERVAL"]);
+		int check_interval = stoi(this->settings["CHECK_INTERVAL"]);
 		if (std::floor(check_interval) == check_interval && check_interval > 0) {
 			Logger::logInfo("Setting CHECK_INTERVAL to \'" + to_string(check_interval) + "\'");
 			return check_interval;
@@ -182,7 +200,7 @@ int Settings::getCheckInterval() {
 
 int Settings::getChecksBeforeAlert() {
 	try {
-		int checks_before_alert = stoi(settings["CHECKS_BEFORE_ALERT"]);
+		int checks_before_alert = stoi(this->settings["CHECKS_BEFORE_ALERT"]);
 		if (std::floor(checks_before_alert) == checks_before_alert && checks_before_alert >= 0) {
 			Logger::logInfo("Setting CHECKS_BEFORE_ALERT to \'" + to_string(checks_before_alert) + "\'");
 			return checks_before_alert;
@@ -197,7 +215,7 @@ int Settings::getChecksBeforeAlert() {
 
 int Settings::getChecksCooldown() {
 	try {
-		int checks_cooldown = stoi(settings["CHECKS_COOLDOWN"]);
+		int checks_cooldown = stoi(this->settings["CHECKS_COOLDOWN"]);
 		if (std::floor(checks_cooldown) == checks_cooldown && checks_cooldown >= 0) {
 			Logger::logInfo("Setting CHECKS_COOLDOWN to \'" + to_string(checks_cooldown) + "\'");
 			return checks_cooldown;
@@ -212,7 +230,7 @@ int Settings::getChecksCooldown() {
 
 int Settings::getMaxErrors() {
 	try {
-		int max_errors = stoi(settings["MAX_ERRORS"]);
+		int max_errors = stoi(this->settings["MAX_ERRORS"]);
 		if (std::floor(max_errors) == max_errors) {
 			Logger::logInfo("Setting MAX_ERRORS to \'" + to_string(max_errors) + "\'");
 			return max_errors;
@@ -227,7 +245,7 @@ int Settings::getMaxErrors() {
 
 string Settings::getGraylogFQDN() {
 	try {
-		string graylog_fqdn = settings["GRAYLOG_FQDN"];
+		string graylog_fqdn = this->settings["GRAYLOG_FQDN"];
 		transform(graylog_fqdn.begin(), graylog_fqdn.end(), graylog_fqdn.begin(), ::tolower);
 		if (graylog_fqdn != "") {
 			Logger::logInfo("Setting GRAYLOG_FQDN to \'" + graylog_fqdn + "\'");
@@ -243,7 +261,7 @@ string Settings::getGraylogFQDN() {
 
 string Settings::getGraylogHTTPPath() {
 	try {
-		string graylog_http_path = settings["GRAYLOG_HTTP_PATH"];
+		string graylog_http_path = this->settings["GRAYLOG_HTTP_PATH"];
 		transform(graylog_http_path.begin(), graylog_http_path.end(), graylog_http_path.begin(), ::tolower);
 		if (graylog_http_path != "" && graylog_http_path.find('/') != std::string::npos) {
 			Logger::logInfo("Setting GRAYLOG_HTTP_PATH to \'" + graylog_http_path + "\'");
@@ -259,7 +277,7 @@ string Settings::getGraylogHTTPPath() {
 
 string Settings::getGraylogTransportMethod() {
 	try {
-		string graylog_transport_method = settings["GRAYLOG_TRANSFER_METHOD"];
+		string graylog_transport_method = this->settings["GRAYLOG_TRANSFER_METHOD"];
 		transform(graylog_transport_method.begin(), graylog_transport_method.end(), graylog_transport_method.begin(), ::tolower);
 		if (graylog_transport_method == "http" || graylog_transport_method == "udp" || graylog_transport_method == "tcp") {
 			Logger::logInfo("Setting GRAYLOG_TRANSFER_METHOD to \'" + graylog_transport_method + "\'");
@@ -275,7 +293,7 @@ string Settings::getGraylogTransportMethod() {
 
 string Settings::getLogLevel() {
 	try {
-		string log_level = settings["LOGLEVEL"];
+		string log_level = this->settings["LOGLEVEL"];
 		transform(log_level.begin(), log_level.end(), log_level.begin(), ::tolower);
 		if (log_level == "info" || log_level == "notice" || log_level == "debug" || log_level == "error")
 				return log_level;
@@ -289,10 +307,10 @@ string Settings::getLogLevel() {
 
 string Settings::getRulesDir() {
 	try {
-		if (settings["RULES_DIRECTORY"].empty())
+		if (this->settings["RULES_DIRECTORY"].empty())
 			return "/etc/pmdaemon/rules.d";
 		else
-			return settings["RULES_DIRECTORY"];
+			return this->settings["RULES_DIRECTORY"];
 	} catch (...) {
 		Logger::logError("Invalid RULES_DIRECTORY value in configuration! Using '/etc/pmdaemon/rules.d'.");
 		return "/etc/pmdaemon/rules.d";

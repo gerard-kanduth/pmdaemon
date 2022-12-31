@@ -121,6 +121,7 @@ class Controller {
 		bool state_trigger;
 		bool load_rules;
 		bool specific_rules_check_only;
+		bool term_cgroup_cleanup;
 		double default_cpu_trigger_threshold;
 		double default_mem_trigger_threshold;
 		int default_checks_before_alert;
@@ -155,6 +156,7 @@ class Controller {
 		// private functions
 		ProcessInfo collectProcessInfo(Process*, string);
 		bool addPidToCgroup(string*, int*);
+		bool checkProcess(Process*);
 		bool curlPostJSON(const char*);
 		bool checkIfCgroupEmpty(string*, int*);
 		bool checkPenaltyList(Process*, string);
@@ -162,7 +164,9 @@ class Controller {
 		bool createCgroup(string*, int*);
 		bool doLimit(Process*);
 		bool enableCgroupControllers();
+		bool iterateProcessList(string);
 		bool removeCgroup(string);
+		bool removePidFromCgroup(int);
 		string readProcFile(string, int*);
 		void graylogAlert(ProcessInfo);
 		void graylogHTTPAlert(ProcessInfo);
@@ -178,10 +182,11 @@ class Controller {
 		// public functions
 		Controller(const char*, Settings*&);
 		~Controller();
-		bool checkProcess(Process*);
+		bool cleanupCgroups();
 		bool doCheck();
-		bool iterateProcessList(string);
-		
+		bool terminate();
+		void showInformation();
+
 };
 
 #endif

@@ -1,9 +1,11 @@
+#include <csignal>
 #include <iostream>
 #include <string>
 #include <unistd.h>
 #include "controller.h"
 #include "logger.h"
 #include "settings.h"
+#include "utils.h"
 
 using namespace std;
 
@@ -28,7 +30,48 @@ bool running = true;
 // check-interval value (wait-time)
 int check_interval;
 
+// signal handler (needed to remove all created cgroups and for debug purpose)
+void signalHandler(int signal) {
+
+	switch (signal)  {
+
+		// SIGTERM signal
+		case 15:
+			if (controller->terminate()) {exit(0);} else {exit(1);}
+			break;
+
+		// SIGABRT signal
+		case 6:
+			if (controller->terminate()) {exit(0);} else {exit(1);}
+			break;
+
+		// SIGUSR1 signal
+		case 10:
+			controller->cleanupCgroups();
+			break;
+
+		// SIGUSR2 signal
+		case 12:
+			controller->showInformation();
+			break;
+
+		// unknown signals
+		default:
+			cerr << daemon_name << " received unknown signal (" << to_string(signal) << ")!";
+			break;
+
+	}
+
+}
+
+// main, this is where all the magic happens
 int main() {
+
+    // register all needed signals to the signal handler
+    signal(SIGTERM, signalHandler);
+	signal(SIGABRT, signalHandler);
+	signal(SIGUSR1, signalHandler);
+	signal(SIGUSR2, signalHandler);
 
 	// initialize a singleton instance for the logger
 	Logger::getInstance();
@@ -66,4 +109,5 @@ int main() {
 	/* --- end check routine --- */
 
 	return 0;
+
 }

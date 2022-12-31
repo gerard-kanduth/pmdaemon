@@ -69,12 +69,13 @@ class RuleManager {
 		bool generateRuleFromFile(string);
 		bool registerRule(map<string, string>);
 		void loadRules();
-		void showRuleContent(map<string, string>);
+		void showRuleContent(Rule);
 
 	public:
 
 		RuleManager(const char*, string);
 		Rule* loadIfRuleExists(string);
+		void showRules();
 
 };
 

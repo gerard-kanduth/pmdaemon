@@ -1,7 +1,8 @@
 #include "controller.h"
 
 Controller::Controller(const char* daemon_name, Settings*& settings) {
-	Logger::logInfo("Initializing the controller ...");
+
+	Logger::logNotice("Initializing the controller ...");
 	this->daemon_name = daemon_name;
 	this->settings = settings;
 	gethostname(this->hostname_buffer, sizeof(this->hostname_buffer));
@@ -17,6 +18,7 @@ Controller::Controller(const char* daemon_name, Settings*& settings) {
 	this->graylog_enabled = settings->getGraylogEnabled();
 	this->load_rules = settings->getLoadRules();
 	this->specific_rules_check_only = settings->getSpecificRulesCheckOnly();
+	this->term_cgroup_cleanup = settings->getTermCgroupCleanup();
 
 	if (this->graylog_enabled) {
 		this->graylog_transport_method = settings->getGraylogTransportMethod();
@@ -172,12 +174,6 @@ bool Controller::iterateProcessList(string check_result) {
 		return false;
 	}
 
-	// show the current penalty-list (debug-only)
-	if (Logger::getLogLevel() == "debug") {
-		for (it = penalty_list.begin(); it != penalty_list.end(); ++it)
-			if (it->second.penalty_cause != "zombie" && it->second.penalty_cause != "dstate")
-				Logger::logDebug("PID: "+to_string(it->second.pid)+" Penalty_Counter: "+to_string(it->second.penalty_counter)+" Cooldown_Counter: "+to_string(it->second.cooldown_counter));
-	}
 	return true;
 }
 
@@ -406,6 +402,10 @@ bool Controller::checkIfCgroupEmpty(string* cgroup_parent_group, int* pid) {
 
 }
 
+bool Controller::cleanupCgroups() {
+	
+}
+
 bool Controller::createCgroup(string* cgroup_parent_group, int* pid) {
 
 	string cgroup = *cgroup_parent_group;
@@ -437,6 +437,10 @@ bool Controller::removeCgroup(string cgroup) {
 		Logger::logError("Unable to remove cgroup "+cgroup);
 		return false;
 	}
+}
+
+bool Controller::removePidFromCgroup(int pid) {
+	
 }
 
 // collect information about the process
@@ -636,4 +640,45 @@ bool Controller::curlPostJSON(const char* json_data) {
 	}
 
 	return true;
+}
+
+bool Controller::terminate() {
+
+	Logger::logNotice("Shutting down the controller ...");
+
+	if(this->term_cgroup_cleanup) {
+		Logger::logInfo("Cleanup of created Cgroups");
+	}
+	else {
+		return true;
+	}
+
+	return true;
+}
+
+void Controller::showInformation() {
+
+	Logger::logInfo("********************");
+	Logger::logInfo("*   CurrentRules   *");
+	Logger::logInfo("********************");
+	rulemanager->showRules();
+
+	// show the current penalty-list (debug-only)
+	Logger::logInfo("********************");
+	Logger::logInfo("* PenaltyListItems *");
+	Logger::logInfo("********************");
+	for (it = this->penalty_list.begin(); it != this->penalty_list.end(); ++it) {
+		std::stringstream penalty_list_item;
+		penalty_list_item
+			<< " pid: " << to_string(it->second.pid)
+			<< " penalty_cause: " << it->second.penalty_cause
+			<< " penalty_counter: " << to_string(it->second.penalty_counter)
+			<< " cooldown_counter: " << to_string(it->second.cooldown_counter)
+			<< " alerted: " << it->second.alerted
+			<< " limited: " << it->second.limited
+			<< " in_cgroup: " << it->second.in_cgroup
+			<< " cgroup_name: " << it->second.cgroup_name;
+		Logger::logInfo(penalty_list_item.str());
+	}
+
 }
