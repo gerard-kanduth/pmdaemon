@@ -116,6 +116,7 @@ bool RuleManager::registerRule(map<string, string> file_content) {
 		rule.cgroup_memory_high_file = cgroup_root_dir+"/"+this->memory_high_file;
 		rule.cgroup_memory_max_file = cgroup_root_dir+"/"+this->memory_max_file;
 		rule.cgroup_freezer_file = cgroup_root_dir+"/"+this->freezer_file;
+		rule.cgroup_kill_file = cgroup_root_dir+"/"+this->kill_file;
 
 		// register this rule to the global rulemanager
 		this->rules.insert(std::pair<string, Rule>(rule.command, rule));
@@ -222,7 +223,6 @@ bool RuleManager::createCgroup(Rule* rule) {
 		} else { cpu_max += "max 100000"; }
 		if (!Utils::writeToFile(rule->cgroup_cpu_max_file, cpu_max)) {
 			Logger::logError("Something went wrong while modifying "+rule->cgroup_cpu_max_file);
-			cerr << "Something went wrong with wrtinting!!!\n";
 			return false;
 		}
 
@@ -240,7 +240,6 @@ bool RuleManager::createCgroup(Rule* rule) {
 				return false;
 			}
 		}
-
 	}
 
 	return true;

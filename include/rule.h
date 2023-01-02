@@ -33,6 +33,7 @@ class Rule {
 		string cgroup_procs_file;
 		string cgroup_memory_high_file;
 		string cgroup_memory_max_file;
+		string cgroup_kill_file;
 		string cgroup_freezer_file;
 
 };

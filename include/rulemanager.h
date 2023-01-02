@@ -55,12 +55,13 @@ class RuleManager {
 		const char* rules_directory = nullptr;
 		const char* daemon_name = nullptr;
 		const char* cgroup_root_dir = "/sys/fs/cgroup";
-		string subtree_control_file = "cgroup.subtree_control";
 		string cpu_max_file = "cpu.max";
-		string procs_file = "cgroup.procs";
+		string freezer_file = "cgroup.freeze";
+		string kill_file = "cgroup.kill";
 		string memory_high_file = "memory.high";
 		string memory_max_file = "memory.max";
-		string freezer_file = "cgroup.freeze";
+		string procs_file = "cgroup.procs";
+		string subtree_control_file = "cgroup.subtree_control";
 
 		map<string, Rule> rules;
 

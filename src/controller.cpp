@@ -271,6 +271,15 @@ bool Controller::checkPenaltyList(Process* process, string penalty_cause) {
 					it->second.in_cgroup = true;
 					Logger::logInfo("["+this->specific_rule->rule_name+"] Added PID "+to_string(process->pid)+" to cgroup "+this->specific_rule->cgroup_name);
 					graylogLimitInfo(process);
+
+					// if PID_KILL_ENABLED is set to 1 simply kill the process
+					if (this->specific_rule->pid_kill_enabled) {
+						if (!Utils::writeToFile(this->specific_rule->cgroup_kill_file, "1")) {
+							Logger::logError("Something went wrong while modifying "+this->specific_rule->cgroup_kill_file);
+							return false;
+						}
+					}
+
 				} else {
 					Logger::logError("["+this->specific_rule->rule_name+"] Unable to add PID "+to_string(process->pid)+" to cgroup "+this->specific_rule->cgroup_name);
 				}
@@ -396,7 +405,7 @@ bool Controller::checkIfCgroupEmpty(string* cgroup_parent_group, int* pid) {
 bool Controller::cleanupCgroups() {
 
 	Logger::logNotice("Received SIGUSR1 signal, performing cgroup cleanup");
-	
+
 	bool cleanup_successful = true;
 
 	map<int,PenaltyListItem>::iterator delete_iterator;
