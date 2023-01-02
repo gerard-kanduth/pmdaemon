@@ -411,7 +411,7 @@ bool Controller::cleanupCgroups() {
 
 	bool cleanup_successful = true;
 
-	map<int,PenaltyListItem>::iterator delete_iterator;
+	unordered_map<int,PenaltyListItem>::iterator delete_iterator;
 
 	while (!this->penalty_list.empty()) {
 		delete_iterator = this->penalty_list.begin();

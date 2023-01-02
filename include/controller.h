@@ -7,7 +7,7 @@
 #include <iomanip>
 #include <curl/curl.h>
 #include <limits>
-#include <map>
+#include <unordered_map>
 #include <sstream>
 #include <stdio.h>
 #include <string>
@@ -66,8 +66,8 @@ class Controller {
 		};
 
 		// penalty list
-		map<int,PenaltyListItem> penalty_list;
-		map<int,PenaltyListItem>::iterator it;
+		unordered_map<int,PenaltyListItem> penalty_list;
+		unordered_map<int,PenaltyListItem>::iterator it;
 
 		// settings object (contains all settings)
 		Settings* settings = nullptr;

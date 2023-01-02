@@ -4,7 +4,7 @@
 #include <iostream>
 #include <filesystem>
 #include <fstream>
-#include <map>
+#include <unordered_map>
 #include <set>
 #include <string>
 #include <sys/stat.h>
@@ -25,7 +25,7 @@ class RuleManager {
 
 		struct RuleReturn {
 			bool success;
-			map<string, string> rule;
+			unordered_map<string, string> rule;
 		};
 
 		const set<string> mandatory_rule_settings {
@@ -63,13 +63,13 @@ class RuleManager {
 		string procs_file = "cgroup.procs";
 		string subtree_control_file = "cgroup.subtree_control";
 
-		map<string, Rule> rules;
+		unordered_map<string, Rule> rules;
 
 		RuleReturn readRuleFile(string);
 		bool createCgroup(Rule*);
-		bool checkIfRuleIsValid(map<string, string>);
+		bool checkIfRuleIsValid(unordered_map<string, string>);
 		bool generateRuleFromFile(string);
-		bool registerRule(map<string, string>);
+		bool registerRule(unordered_map<string, string>);
 		void loadRules();
 		void showRuleContent(Rule);
 

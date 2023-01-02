@@ -60,7 +60,7 @@ bool RuleManager::generateRuleFromFile(string filename) {
 	return true;
 }
 
-bool RuleManager::registerRule(map<string, string> file_content) {
+bool RuleManager::registerRule(unordered_map<string, string> file_content) {
 
 	try {
 
@@ -132,7 +132,7 @@ bool RuleManager::registerRule(map<string, string> file_content) {
 
 }
 
-bool RuleManager::checkIfRuleIsValid(map<string, string> file_content) {
+bool RuleManager::checkIfRuleIsValid(unordered_map<string, string> file_content) {
 
 	// check if all mandatory_rule_settings are set, otherwise discard this rule
 	for (auto& s : this->mandatory_rule_settings) {
@@ -281,7 +281,7 @@ Rule* RuleManager::loadIfRuleExists(string command) {
 // read the file and return a map object with read values
 RuleManager::RuleReturn RuleManager::readRuleFile(string filename) {
 	RuleReturn current_rule_content;
-	map<string, string> rule;
+	unordered_map<string, string> rule;
 	fstream rules_file;
 	rules_file.open(filename, ios::in);
 	if (!rules_file) {

@@ -5,7 +5,7 @@
 #include <fstream>
 #include <string>
 #include <set>
-#include <map>
+#include <unordered_map>
 #include <cmath>
 #include <algorithm>
 #include "logger.h"
@@ -43,7 +43,7 @@ class Settings {
 		const char* filename = nullptr;
 		const char* daemon_name = nullptr;
 		fstream settings_file;
-		map<string, string> settings;
+		unordered_map<string, string> settings;
 
 	public:
 
