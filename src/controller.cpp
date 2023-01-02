@@ -1,31 +1,34 @@
 #include "controller.h"
 
-Controller::Controller(const char* daemon_name, Settings*& settings) {
+// UNUSED macro for hiding "unused parameter" warnings due to future TODO's
+#define UNUSED(object) (void)(object)
+
+Controller::Controller(const char* dname, Settings*& stngs) {
 
 	Logger::logNotice("Initializing the controller ...");
-	this->daemon_name = daemon_name;
-	this->settings = settings;
+	this->daemon_name = dname;
+	this->settings = stngs;
 	gethostname(this->hostname_buffer, sizeof(this->hostname_buffer));
 	this->hostname = this->hostname_buffer;
 
 	// load needed settings
-	this->max_errors = settings->getMaxErrors();
-	this->default_cpu_trigger_threshold = settings->getCpuTriggerThreshold();
-	this->default_mem_trigger_threshold = settings->getMemTriggerThreshold();
-	this->default_checks_before_alert = settings->getChecksBeforeAlert();
-	this->state_trigger = settings->getStateTrigger();
-	this->checks_cooldown = settings->getChecksCooldown();
-	this->graylog_enabled = settings->getGraylogEnabled();
-	this->load_rules = settings->getLoadRules();
-	this->specific_rules_check_only = settings->getSpecificRulesCheckOnly();
-	this->term_cgroup_cleanup = settings->getTermCgroupCleanup();
+	this->max_errors = stngs->getMaxErrors();
+	this->default_cpu_trigger_threshold = stngs->getCpuTriggerThreshold();
+	this->default_mem_trigger_threshold = stngs->getMemTriggerThreshold();
+	this->default_checks_before_alert = stngs->getChecksBeforeAlert();
+	this->state_trigger = stngs->getStateTrigger();
+	this->checks_cooldown = stngs->getChecksCooldown();
+	this->graylog_enabled = stngs->getGraylogEnabled();
+	this->load_rules = stngs->getLoadRules();
+	this->specific_rules_check_only = stngs->getSpecificRulesCheckOnly();
+	this->term_cgroup_cleanup = stngs->getTermCgroupCleanup();
 
 	if (this->graylog_enabled) {
-		this->graylog_transport_method = settings->getGraylogTransportMethod();
-		this->graylog_port = settings->getGraylogPort();
-		this->graylog_fqdn = settings->getGraylogFQDN();
-		this->graylog_http_path = settings->getGraylogHTTPPath();
-		this->graylog_http_secure = settings->getGraylogHTTPSecure();
+		this->graylog_transport_method = stngs->getGraylogTransportMethod();
+		this->graylog_port = stngs->getGraylogPort();
+		this->graylog_fqdn = stngs->getGraylogFQDN();
+		this->graylog_http_path = stngs->getGraylogHTTPPath();
+		this->graylog_http_secure = stngs->getGraylogHTTPSecure();
 
 		if (this->graylog_transport_method == "http") {
 
@@ -47,7 +50,7 @@ Controller::Controller(const char* daemon_name, Settings*& settings) {
 	if (load_rules) {
 		if (!enableCgroupControllers())
 			exit(EXIT_FAILURE);
-		this->rulemanager = new RuleManager(this->daemon_name, settings->getRulesDir());
+		this->rulemanager = new RuleManager(this->daemon_name, stngs->getRulesDir());
 	}
 
 }
@@ -119,10 +122,10 @@ bool Controller::enableCgroupControllers() {
 
 }
 
-bool Controller::iterateProcessList(string check_result) {
+bool Controller::iterateProcessList(string cresult) {
 	try {
 
-		std::istringstream ps_output(check_result);
+		std::istringstream ps_output(cresult);
 
 		while(getline(ps_output, ps_line)) {
 
@@ -590,12 +593,16 @@ void Controller::graylogHTTPAlert(ProcessInfo process_info) {
 	curlPostJSON(json_data.c_str());
 }
 
+
+
 void Controller::graylogUDPAlert(ProcessInfo process_info) {
 	// TODO
+	UNUSED(process_info);
 }
 
 void Controller::graylogTCPAlert(ProcessInfo process_info) {
 	// TODO
+	UNUSED(process_info);
 }
 
 void Controller::graylogHTTPlimitInfo(Process* process) {
@@ -622,10 +629,12 @@ void Controller::graylogHTTPlimitInfo(Process* process) {
 
 void Controller::graylogUDPlimitInfo(Process* process) {
 	// TODO
+	UNUSED(process);
 }
 
 void Controller::graylogTCPlimitInfo(Process* process) {
 	// TODO
+	UNUSED(process);
 }
 
 bool Controller::curlPostJSON(const char* json_data) {

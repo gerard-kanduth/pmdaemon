@@ -4,29 +4,29 @@ void Logger::setLogLevel(string log_level) {
 	getInstance().instanceSetLogLevel(log_level);
 }
 
-void Logger::instanceSetLogLevel(string log_level) {
-	if (log_level == "info" || log_level == "INFO") {
+void Logger::instanceSetLogLevel(string llevel) {
+	if (llevel == "info" || llevel == "INFO") {
 		setlogmask(LOG_UPTO(LOG_INFO));
-		this->log_level = log_level;
+		this->log_level = llevel;
 	}
-	else if (log_level == "notice" || log_level == "NOTICE") {
+	else if (llevel == "notice" || llevel == "NOTICE") {
 		setlogmask(LOG_UPTO(LOG_NOTICE));
-		this->log_level = log_level;
+		this->log_level = llevel;
 	}
-	else if (log_level == "debug" || log_level == "DEBUG") {
+	else if (llevel == "debug" || llevel == "DEBUG") {
 		setlogmask(LOG_UPTO(LOG_DEBUG));
-		this->log_level = log_level;
+		this->log_level = llevel;
 	}
-	else if (log_level == "error" || log_level == "ERROR") {
+	else if (llevel == "error" || llevel == "ERROR") {
 		setlogmask(LOG_UPTO(LOG_ERR));
-		this->log_level = log_level;
+		this->log_level = llevel;
 	}
 	else {
 		logError("Invalid log_level in configuration!");
 		setlogmask(LOG_UPTO(LOG_INFO));
 		this->log_level = "info";
 	}
-	Logger::logInfo("Setting LOGLEVEL to \'"+log_level+"\'");
+	Logger::logInfo("Setting LOGLEVEL to \'"+llevel+"\'");
 }
 
 string Logger::getLogLevel(){

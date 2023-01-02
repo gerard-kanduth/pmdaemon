@@ -1,7 +1,7 @@
 #include "settings.h"
 
-Settings::Settings(const char* filename) {
-	this->filename = filename;
+Settings::Settings(const char* fname) {
+	this->filename = fname;
 	Logger::logInfo("Loading configuration file " + std::string(this->filename));
 	this->config_success = readSettings();
 }
@@ -33,7 +33,7 @@ bool Settings::readSettings() {
 bool Settings::getGraylogEnabled() {
 	try {
 		int graylog_enabled = stoi(this->settings["GRAYLOG_ENABLED"]);
-		if (std::floor(graylog_enabled) == graylog_enabled && graylog_enabled == 0 || graylog_enabled == 1) {
+		if (((std::floor(graylog_enabled) == graylog_enabled) && (graylog_enabled == 0)) || (graylog_enabled == 1)) {
 			Logger::logInfo("Setting GRAYLOG_ENABLE to \'" + to_string(graylog_enabled) + "\'");
 			if (graylog_enabled == 1)
 				return true;
@@ -51,7 +51,7 @@ bool Settings::getGraylogEnabled() {
 bool Settings::getGraylogHTTPSecure() {
 	try {
 		int graylog_http_secure = stoi(this->settings["GRAYLOG_HTTP_SECURE"]);
-		if (std::floor(graylog_http_secure) == graylog_http_secure && graylog_http_secure == 0 || graylog_http_secure == 1) {
+		if (((std::floor(graylog_http_secure) == graylog_http_secure) && (graylog_http_secure == 0)) || (graylog_http_secure == 1)) {
 			Logger::logInfo("Setting GRAYLOG_HTTP_SECURE to \'" + to_string(graylog_http_secure) + "\'");
 			if (graylog_http_secure == 1)
 				return true;
@@ -69,7 +69,7 @@ bool Settings::getGraylogHTTPSecure() {
 bool Settings::getStateTrigger() {
 	try {
 		int state_trigger = stoi(this->settings["STATE_TRIGGER"]);
-		if (std::floor(state_trigger) == state_trigger && state_trigger == 0 || state_trigger == 1) {
+		if (((std::floor(state_trigger) == state_trigger) && (state_trigger == 0)) || (state_trigger == 1)) {
 			Logger::logInfo("Setting STATE_TRIGGER to \'" + to_string(state_trigger) + "\'");
 			if (state_trigger == 1)
 				return true;
@@ -87,7 +87,7 @@ bool Settings::getStateTrigger() {
 bool Settings::getLoadRules() {
 	try {
 		int load_rules = stoi(this->settings["LOAD_RULES"]);
-		if (std::floor(load_rules) == load_rules && load_rules == 0 || load_rules == 1) {
+		if (((std::floor(load_rules) == load_rules) && (load_rules == 0)) || (load_rules == 1)) {
 			Logger::logInfo("Setting LOAD_RULES to \'" + to_string(load_rules) + "\'");
 			if (load_rules == 1)
 				return true;
@@ -105,7 +105,7 @@ bool Settings::getLoadRules() {
 bool Settings::getSpecificRulesCheckOnly() {
 	try {
 		int specific_rules_check_only = stoi(this->settings["SPECIFIC_RULES_CHECK_ONLY"]);
-		if (std::floor(specific_rules_check_only) == specific_rules_check_only && specific_rules_check_only == 0 || specific_rules_check_only == 1) {
+		if (((std::floor(specific_rules_check_only) == specific_rules_check_only) && (specific_rules_check_only == 0)) || (specific_rules_check_only == 1)) {
 			Logger::logInfo("Setting SPECIFIC_RULES_CHECK_ONLY to \'" + to_string(specific_rules_check_only) + "\'");
 			if (specific_rules_check_only == 1)
 				return true;
@@ -123,7 +123,7 @@ bool Settings::getSpecificRulesCheckOnly() {
 bool Settings::getTermCgroupCleanup() {
 	try {
 		int term_cgroup_cleanup = stoi(this->settings["TERM_CGROUP_CLEANUP"]);
-		if (std::floor(term_cgroup_cleanup) == term_cgroup_cleanup && term_cgroup_cleanup == 0 || term_cgroup_cleanup == 1) {
+		if (((std::floor(term_cgroup_cleanup) == term_cgroup_cleanup) && (term_cgroup_cleanup == 0)) || (term_cgroup_cleanup == 1)) {
 			Logger::logInfo("Setting TERM_CGROUP_CLEANUP to \'" + to_string(term_cgroup_cleanup) + "\'");
 			if (term_cgroup_cleanup == 1)
 				return true;

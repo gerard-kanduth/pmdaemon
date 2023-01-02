@@ -1,8 +1,8 @@
 #include "rulemanager.h"
 
-RuleManager::RuleManager(const char* daemon_name, string rules_directory) {
-	this->daemon_name = daemon_name;
-	this->rules_directory = rules_directory.c_str();
+RuleManager::RuleManager(const char* dname, string rdirectory) {
+	this->daemon_name = dname;
+	this->rules_directory = rdirectory.c_str();
 	Logger::logNotice("Loading available rules from " + std::string(this->rules_directory));
 	loadRules();
 }
@@ -73,20 +73,23 @@ bool RuleManager::registerRule(map<string, string> file_content) {
 		rule.mem_trigger_threshold = stod(file_content["MEM_TRIGGER_THRESHOLD"]);
 
 		// check if values are valid (e.g. not negative values)
-		if (!file_content["CHECKS_BEFORE_ALERT"].empty())
+		if (!file_content["CHECKS_BEFORE_ALERT"].empty()) {
 			rule.checks_before_alert = stoi(file_content["CHECKS_BEFORE_ALERT"]);
 			if (rule.checks_before_alert < 0)
 				return false;
+		}
 
-		if (!file_content["LIMIT_CPU_PERCENT"].empty())
+		if (!file_content["LIMIT_CPU_PERCENT"].empty()) {
 			rule.limit_cpu_percent = stoi(file_content["LIMIT_CPU_PERCENT"]);
 			if (rule.limit_cpu_percent < 0 || rule.limit_cpu_percent > 100)
 				return false;
+		}
 
-		if (!file_content["LIMIT_MEMORY_VALUE"].empty())
+		if (!file_content["LIMIT_MEMORY_VALUE"].empty()) {
 			rule.limit_memory_value = stoi(file_content["LIMIT_MEMORY_VALUE"]);
 			if (rule.limit_memory_value < 0)
 				return false;
+		}
 
 		// optional rule settings
 		(file_content["NO_CHECK"] == "1") ? rule.no_check = true : rule.no_check = false;
@@ -104,19 +107,19 @@ bool RuleManager::registerRule(map<string, string> file_content) {
 		rule.cgroup_name = cgroup_name;
 
 		// cgroup root dir
-		std::string cgroup_root_dir = this->cgroup_root_dir;
-		cgroup_root_dir += "/";
-		cgroup_root_dir += cgroup_name;
-		rule.cgroup_root_dir = cgroup_root_dir;
+		std::string cgrprdir = this->cgroup_root_dir;
+		cgrprdir += "/";
+		cgrprdir += cgroup_name;
+		rule.cgroup_root_dir = cgrprdir;
 
 		// create all needed file references for this cgroup
-		rule.cgroup_subtree_control_file = cgroup_root_dir+"/"+this->subtree_control_file;
-		rule.cgroup_cpu_max_file = cgroup_root_dir+"/"+this->cpu_max_file;
-		rule.cgroup_procs_file = cgroup_root_dir+"/"+this->procs_file;
-		rule.cgroup_memory_high_file = cgroup_root_dir+"/"+this->memory_high_file;
-		rule.cgroup_memory_max_file = cgroup_root_dir+"/"+this->memory_max_file;
-		rule.cgroup_freezer_file = cgroup_root_dir+"/"+this->freezer_file;
-		rule.cgroup_kill_file = cgroup_root_dir+"/"+this->kill_file;
+		rule.cgroup_subtree_control_file = cgrprdir+"/"+this->subtree_control_file;
+		rule.cgroup_cpu_max_file = cgrprdir+"/"+this->cpu_max_file;
+		rule.cgroup_procs_file = cgrprdir+"/"+this->procs_file;
+		rule.cgroup_memory_high_file = cgrprdir+"/"+this->memory_high_file;
+		rule.cgroup_memory_max_file = cgrprdir+"/"+this->memory_max_file;
+		rule.cgroup_freezer_file = cgrprdir+"/"+this->freezer_file;
+		rule.cgroup_kill_file = cgrprdir+"/"+this->kill_file;
 
 		// register this rule to the global rulemanager
 		this->rules.insert(std::pair<string, Rule>(rule.command, rule));
