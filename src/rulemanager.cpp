@@ -253,11 +253,16 @@ bool RuleManager::createCgroup(Rule* rule) {
 }
 
 Rule* RuleManager::loadIfRuleExists(string command) {
+
+	// iterate all available rules
 	for (auto& r : this->rules) {
-		if (command.find(r.first) != std::string::npos){
+
+		// check if the command starts with the command-string from rule
+		if (command.rfind(r.first, 0) == 0){
 			return &this->rules[r.first];
 		}
 	}
+
 	return nullptr;
 }
 

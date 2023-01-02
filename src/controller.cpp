@@ -189,7 +189,7 @@ bool Controller::checkProcess(Process* process) {
 		if (this->specific_rule) {
 
 			if (Logger::getLogLevel() == "debug")
-				Logger::logDebug("Checking '"+this->specific_rule->command+"' with PID '"+to_string(process->pid)+"' command '"+process->command+"' with rule "+this->specific_rule->rule_name);
+				Logger::logDebug("Checking '"+process->command+"' with PID '"+to_string(process->pid)+"' command '"+this->specific_rule->command+"' due to rule '"+this->specific_rule->rule_name+"'");
 
 			// skip command if the NO_CHECK setting is set in rule
 			if (this->specific_rule->no_check) {
