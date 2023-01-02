@@ -95,6 +95,7 @@ bool RuleManager::registerRule(map<string, string> file_content) {
 		(file_content["PID_KILL_ENABLED"] == "1") ? rule.pid_kill_enabled = true : rule.pid_kill_enabled = false;
 		(file_content["SEND_PROCESS_FILES"] == "0") ? rule.send_process_files = false : rule.send_process_files = true;
 		(file_content["ENABLE_LIMITING"] == "1") ? rule.enable_limiting = true : rule.enable_limiting = false;
+		(file_content["INCLUDE_BINARY_FOLDER_CHECK"] == "1") ? rule.include_binary_folder_check = true : rule.include_binary_folder_check = false;
 
 		// cgroup name (daemon_name+'-'+rule_name)
 		std::string cgroup_name = this->daemon_name;
@@ -142,7 +143,8 @@ bool RuleManager::checkIfRuleIsValid(map<string, string> file_content) {
 		file_content["OOM_KILL_ENABLED"],
 		file_content["PID_KILL_ENABLED"],
 		file_content["SEND_PROCESS_FILES"],
-		file_content["ENABLE_LIMITING"]
+		file_content["ENABLE_LIMITING"],
+		file_content["INCLUDE_BINARY_FOLDER_CHECK"]
 	};
 	for (auto& b : boolean_settings) {
 		if ((!b.empty()) && (b != "1" && b != "0")) {
@@ -197,14 +199,6 @@ bool RuleManager::createCgroup(Rule* rule) {
 
 			if (mkdir(rule->cgroup_root_dir.c_str(), 0755) != -1) {
 				Logger::logInfo("  |-> Created cgroup "+rule->cgroup_root_dir);
-
-				// write all needed values into the cgroup controller files
-				// if (!Utils::writeToFile(rule->cgroup_subtree_control_file, "+pids +cpu +cpuset +memory")) {
-					// Logger::logError("Something went wrong while modifying "+rule->cgroup_subtree_control_file);
-					// return false;
-				// }
-				// return true;
-
 			}
 			else {
 				Logger::logError("Unable to create cgroup "+rule->cgroup_root_dir);
@@ -257,10 +251,26 @@ Rule* RuleManager::loadIfRuleExists(string command) {
 	// iterate all available rules
 	for (auto& r : this->rules) {
 
-		// check if the command starts with the command-string from rule
-		if (command.rfind(r.first, 0) == 0){
-			return &this->rules[r.first];
+		if (r.second.include_binary_folder_check) {
+			// check if the command starts with the command-string from rule with all possible binary-folder prefixes
+			if (command.rfind(r.first, 0) == 0
+				|| command.rfind("/bin/"+r.first, 0) == 0
+				|| command.rfind("/sbin/"+r.first, 0) == 0
+				|| command.rfind("/usr/bin/"+r.first, 0) == 0
+				|| command.rfind("/usr/sbin/"+r.first, 0) == 0
+				|| command.rfind("/usr/local/bin/"+r.first, 0) == 0
+				|| command.rfind("/usr/local/sbin/"+r.first, 0) == 0
+			){
+				return &this->rules[r.first];
+			}
 		}
+		else {
+			// check if the command starts with the command-string from rule
+			if (command.rfind(r.first, 0) == 0){
+				return &this->rules[r.first];
+			}
+		}
+
 	}
 
 	return nullptr;
@@ -318,6 +328,7 @@ void RuleManager::showRuleContent(Rule rule) {
 	Logger::logInfo("cgroup_memory_high_file: "+rule.cgroup_memory_high_file);
 	Logger::logInfo("cgroup_memory_max_file: "+rule.cgroup_memory_max_file);
 	Logger::logInfo("cgroup_freezer_file: "+rule.cgroup_freezer_file);
+	Logger::logInfo("include_binary_folder_check: "+rule.include_binary_folder_check);
 	Logger::logInfo("-----------------");
 }
 

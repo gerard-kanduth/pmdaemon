@@ -15,6 +15,7 @@ class Rule {
 		bool pid_kill_enabled;
 		bool send_process_files;
 		bool enable_limiting;
+		bool include_binary_folder_check;
 
 		double cpu_trigger_threshold = NAN;
 		double mem_trigger_threshold = NAN;
