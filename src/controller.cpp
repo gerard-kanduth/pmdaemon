@@ -169,6 +169,7 @@ bool Controller::iterateProcessList(string check_result) {
 			// check the current process
 			checkProcess(&current_process);
 		}
+
 	} catch (...) {
 		Logger::logError("Something went wrong while iterating the process list!");
 		return false;
@@ -186,6 +187,9 @@ bool Controller::checkProcess(Process* process) {
 		this->specific_rule = this->rulemanager->loadIfRuleExists(process->command);
 
 		if (this->specific_rule) {
+
+			if (Logger::getLogLevel() == "debug")
+				Logger::logDebug("Checking '"+this->specific_rule->command+"' with PID '"+to_string(process->pid)+"' command '"+process->command+"' with rule "+this->specific_rule->rule_name);
 
 			// skip command if the NO_CHECK setting is set in rule
 			if (this->specific_rule->no_check) {
@@ -357,20 +361,7 @@ bool Controller::addPidToCgroup(string* cgroup_parent_group, int* pid) {
 		createCgroup(cgroup_parent_group, pid);
 	}
 
-	FILE* file;
-
-	file = fopen(cgroup_procs_file.c_str(), "w");
-
-    if (file) {
-        fputs(to_string(*pid).c_str(), file);
-    }
-	else {
-		Logger::logError("Unable to write to file "+cgroup_procs_file+"!");
-		return false;
-	}
-
-	fclose(file);
-	return true;
+	return Utils::writeToFile(cgroup_procs_file, to_string(*pid));
 
 }
 
@@ -403,7 +394,35 @@ bool Controller::checkIfCgroupEmpty(string* cgroup_parent_group, int* pid) {
 }
 
 bool Controller::cleanupCgroups() {
+
+	Logger::logNotice("Received SIGUSR1 signal, performing cgroup cleanup");
 	
+	bool cleanup_successful = true;
+
+	map<int,PenaltyListItem>::iterator delete_iterator;
+
+	while (!this->penalty_list.empty()) {
+		delete_iterator = this->penalty_list.begin();
+		Logger::logInfo("Removing "+to_string(delete_iterator->first)+" from penalty_list.");
+		if (!removePidFromCgroup(delete_iterator->first)) {
+			cleanup_successful = false;
+			break;
+		}
+		if (!removeCgroup(delete_iterator->second.cgroup_name)) {
+			cleanup_successful = false;
+			break;
+		}
+		this->penalty_list.erase(delete_iterator);
+	}
+
+	if (cleanup_successful) {
+		Logger::logInfo("Cleanup of penalty_list and cgroups successful!");
+	}
+	else {
+		Logger::logError("Something went wrong during cleanupCgroup!");
+	}
+
+	return cleanup_successful;
 }
 
 bool Controller::createCgroup(string* cgroup_parent_group, int* pid) {
@@ -440,7 +459,7 @@ bool Controller::removeCgroup(string cgroup) {
 }
 
 bool Controller::removePidFromCgroup(int pid) {
-	
+	return Utils::writeToFile(main_cgroup_procs_file, to_string(pid));
 }
 
 // collect information about the process
@@ -648,6 +667,7 @@ bool Controller::terminate() {
 
 	if(this->term_cgroup_cleanup) {
 		Logger::logInfo("Cleanup of created Cgroups");
+		return cleanupCgroups();
 	}
 	else {
 		return true;

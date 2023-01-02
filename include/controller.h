@@ -89,6 +89,9 @@ class Controller {
 		// the comand which will be constantly checked "2>&1" used to get stderr
 		string command = "ps -e -ww --no-headers -o %p\\; -o stat -o \\;%U -o \\;%C\\; -o %mem -o \\;%a 2>&1";
 
+		// main cgroup.procs file which contains all pids which are not part of a specific cgroup
+		string main_cgroup_procs_file = "/sys/fs/cgroup/cgroup.procs";
+
 		// additional buffer and pipe for reading output
 		array<char, 128> input_buffer;
 		string check_result;
