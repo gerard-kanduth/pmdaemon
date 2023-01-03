@@ -1,0 +1,10 @@
+[Unit]
+Description=Process Monitoring Daemon
+Wants=network.target
+After=syslog.target network-online.target
+
+[Service]
+ExecStart=/usr/sbin/pmdaemon
+
+[Install]
+WantedBy=multi-user.target

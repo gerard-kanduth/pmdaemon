@@ -22,7 +22,7 @@ Controller* controller = nullptr;
 Settings* settings = nullptr;
 
 // settings file
-const char* settings_file = "/srv/process_monitoring_daemon/settings.conf";
+const char* settings_file = "/etc/pmdaemon/settings.conf";
 
 // boolean which defines if daemon is running
 bool running = true;
