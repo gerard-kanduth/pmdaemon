@@ -33,16 +33,16 @@ int check_interval;
 // signal handler (needed to remove all created cgroups and for debug purpose)
 void signalHandler(int signal) {
 
-	switch (signal)  {
+	switch(signal)  {
 
 		// SIGTERM signal
 		case 15:
-			if (controller->terminate()) {exit(0);} else {exit(1);}
+			if(controller->terminate()) {exit(0);} else {exit(1);}
 			break;
 
 		// SIGABRT signal
 		case 6:
-			if (controller->terminate()) {exit(0);} else {exit(1);}
+			if(controller->terminate()) {exit(0);} else {exit(1);}
 			break;
 
 		// SIGUSR1 signal

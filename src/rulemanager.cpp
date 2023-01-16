@@ -132,6 +132,19 @@ bool RuleManager::registerRule(unordered_map<string, string> file_content) {
 
 }
 
+bool RuleManager::removeCgroupRules() {
+	for (auto& r : this->rules) {
+		if (std::filesystem::remove(r.second.cgroup_root_dir)) {
+			Logger::logInfo("Removed parent cgroup "+r.second.cgroup_root_dir);
+		}
+		else {
+			Logger::logError("Unable to remove parent cgroup "+r.second.cgroup_root_dir);
+			return false;
+		}
+	}
+	return true;
+}
+
 bool RuleManager::checkIfRuleIsValid(unordered_map<string, string> file_content) {
 
 	// check if all mandatory_rule_settings are set, otherwise discard this rule

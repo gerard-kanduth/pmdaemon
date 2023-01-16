@@ -434,6 +434,8 @@ bool Controller::cleanupCgroups() {
 		Logger::logError("Something went wrong during cleanupCgroup!");
 	}
 
+	cleanup_successful = this->rulemanager->removeCgroupRules();
+
 	return cleanup_successful;
 }
 
@@ -468,6 +470,7 @@ bool Controller::removeCgroup(string cgroup) {
 		Logger::logError("Unable to remove cgroup "+cgroup);
 		return false;
 	}
+
 }
 
 bool Controller::removePidFromCgroup(int pid) {

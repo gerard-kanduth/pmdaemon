@@ -77,6 +77,7 @@ class RuleManager {
 
 		RuleManager(const char*, string);
 		Rule* loadIfRuleExists(string);
+		bool removeCgroupRules();
 		void showRules();
 
 };
