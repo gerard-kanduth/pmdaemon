@@ -29,34 +29,33 @@ bool RuleManager::generateRuleFromFile(string filename) {
 		Logger::logError("Unable to read this file! Please have a look at this rule.");
 	}
 	else {
-		Logger::logInfo("  |-> Validating file ...");
+		Logger::logInfo("-> Validating file ...");
 		if (checkIfRuleIsValid(file_content.rule)) {
 
 
-			Logger::logInfo("  |-> Registering rule ...");
+			Logger::logInfo("-> Registering rule ...");
 			if (registerRule(file_content.rule)) {
 
 				// register cgroups if enabled
 				if (this->rules[file_content.rule["COMMAND"]].enable_limiting) {
-					Logger::logInfo("  |-> Registering cgroup ...");
+					Logger::logInfo("-> Registering cgroup ...");
 					createCgroup(&this->rules[file_content.rule["COMMAND"]]);
 				}
 			}
 			else {
-				Logger::logError(" '-> Unable to register rule! Error parsing rule settings.");
+				Logger::logError("=> Unable to register rule! Error parsing rule settings.");
 				return false;
 			}
 
 		}
 		else {
-			Logger::logError(" '-> Broken or incomplete rule! Skipping.");
+			Logger::logError("=> Broken or incomplete rule! Skipping.");
 			Logger::logDebug("Make sure all mandatory settings are present and correct datatypes are used.");
 			return false;
 		}
 	}
 
-	// showRuleContent(file_content.rule);
-	Logger::logInfo("  '-> Done!");
+	Logger::logInfo("=> Done!");
 	return true;
 }
 
@@ -210,12 +209,12 @@ bool RuleManager::createCgroup(Rule* rule) {
 
 		// check if the cgroup already exists, otherwise create it
 		if (fs::exists(rule->cgroup_root_dir.c_str())) {
-			Logger::logInfo("  |-> Cgroup "+rule->cgroup_root_dir+" already exists!");
+			Logger::logInfo("-> Cgroup "+rule->cgroup_root_dir+" already exists!");
 		}
 		else {
 
 			if (mkdir(rule->cgroup_root_dir.c_str(), 0755) != -1) {
-				Logger::logInfo("  |-> Created cgroup "+rule->cgroup_root_dir);
+				Logger::logInfo("-> Created cgroup "+rule->cgroup_root_dir);
 			}
 			else {
 				Logger::logError("Unable to create cgroup "+rule->cgroup_root_dir);
@@ -298,7 +297,7 @@ RuleManager::RuleReturn RuleManager::readRuleFile(string filename) {
 	fstream rules_file;
 	rules_file.open(filename, ios::in);
 	if (!rules_file) {
-		Logger::logError("Rule file " + filename + " is not present or readable!");
+		Logger::logError("Rule file "+filename+" is not present or readable!");
 		current_rule_content.success = false;
 		current_rule_content.rule = rule;
 	}
@@ -343,7 +342,7 @@ void RuleManager::showRuleContent(Rule rule) {
 	Logger::logInfo("cgroup_memory_high_file: "+rule.cgroup_memory_high_file);
 	Logger::logInfo("cgroup_memory_max_file: "+rule.cgroup_memory_max_file);
 	Logger::logInfo("cgroup_freezer_file: "+rule.cgroup_freezer_file);
-	Logger::logInfo("include_binary_folder_check: "+rule.include_binary_folder_check);
+	Logger::logInfo("include_binary_folder_check: "+to_string(rule.include_binary_folder_check));
 	Logger::logInfo("-----------------");
 }
 
