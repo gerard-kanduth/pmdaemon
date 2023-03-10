@@ -702,7 +702,11 @@ void Controller::showInformation() {
 	Logger::logInfo("********************");
 	Logger::logInfo("*   CurrentRules   *");
 	Logger::logInfo("********************");
-	rulemanager->showRules();
+    if (this->load_rules) {
+        rulemanager->showRules();
+    } else {
+        Logger::logInfo("LOAD_RULES is set to '0'");
+    }
 
 	// show the current penalty-list (debug-only)
 	Logger::logInfo("********************");
