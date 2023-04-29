@@ -699,9 +699,7 @@ bool Controller::terminate() {
 
 void Controller::showInformation() {
 
-	Logger::logInfo("********************");
-	Logger::logInfo("*   CurrentRules   *");
-	Logger::logInfo("********************");
+	Logger::logInfo(" > Loaded Rules");
     if (this->load_rules) {
         rulemanager->showRules();
     } else {
@@ -709,9 +707,7 @@ void Controller::showInformation() {
     }
 
 	// show the current penalty-list (debug-only)
-	Logger::logInfo("********************");
-	Logger::logInfo("* PenaltyListItems *");
-	Logger::logInfo("********************");
+	Logger::logInfo(" > PIDs on Penalty-List");
 	for (it = this->penalty_list.begin(); it != this->penalty_list.end(); ++it) {
 		std::stringstream penalty_list_item;
 		penalty_list_item
