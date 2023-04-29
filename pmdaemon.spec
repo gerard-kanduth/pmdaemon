@@ -35,5 +35,6 @@ systemctl daemon-reload
 /etc/pmdaemon
 
 %changelog
-* Tue Jan 03 2023 Gerard Raffael Kanduth <gerard@kanduth.rocks> - 1.0
+* Tue Jan 03 2023 Gerard Raffael Kanduth <gerardraffael.kanduth@edu.fh-kaernten.ac.at> - 1.0
 - Initial version of the package
+
