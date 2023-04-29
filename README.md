@@ -23,7 +23,6 @@ Gerard Kanduth <gerardraffael.kanduth@edu.fh-kaernten.ac.at>
 ## INSTALLATION
 
 **Note:** The package "rpm-build" is needed to create RPM packages.
-{: .note}
 
 ### Install needed packages
 
@@ -42,7 +41,6 @@ cd pmdaemon
 
 ### Build and package to RPM
 **Note:** It is possible to simply build the project without packing by running "make pmdaemon" instead.
-{: .note}
 ```
 make all
 ```
