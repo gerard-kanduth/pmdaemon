@@ -1,13 +1,14 @@
-Name:     pmdaemon
-Version:  1.0
-Release:  1%{?dist}
-Summary:  Process Monitoring Daemon package
-License:  GPLv3+
-URL:      https://www.fh-kaernten.at
-BuildRoot: /srv/process_monitoring_daemon
+Name:     	pmdaemon
+Version:  	1.0
+Release:  	1%{?dist}
+Summary:  	Process Monitoring Daemon package
+License:  	GPLv3+
+URL:      	https://github.com/gerard-kanduth/pmdaemon
+BuildRoot: 	/srv/pmdaemon
 
 %description
-This package will install the Process Monitoring Daemon service "pmdaemon.service" which can be used to monitor and limit processes via rules and the help of Cgroup v2.
+This package will install the Process Monitoring Daemon service "pmdaemon.service"
+which can be used to monitor and limit processes via rules and the help of Cgroup v2.
 
 %prep
 # nothing to do here
