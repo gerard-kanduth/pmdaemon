@@ -6,19 +6,22 @@ on Linux-based systems. The aim of this project is to provide a tool which will
 give administrators the possibillity to specify rules with desired thresholds
 for any specific type of application. The daemon will constantly check all
 running processes if values like CPU-, and/or RAM-Usage exceeds the set
-maximum. A Limitation of these applications can be performed by the help of
+maximum. A limitation of these applications can be performed by the help of
 cgroup v2. Actions like killing or pausing the process can also be configured.
-Additionally information can be forwarded to a datacollector (e.g. Graylog2)
-to further analyze the cause why the task is utilizing that much
-system-resources.
+Additionally collected information regarding the process can be forwarded to
+a datacollector (e.g. Graylog2) to further investigate the cause why it is
+utilizing higher system-resources.
 
 ## AUTHORS
 Gerard Kanduth <gerardraffael.kanduth@edu.fh-kaernten.ac.at>
 
-## REQUIREMENTS
+## BUILD REQUIREMENTS
 + Linux-based System
 + GNU Compiler Collection (g++) for compiling
++ GNU make utility for running Makefile
++ "libcurl" library with devel-packages
 + "procps-ng" or "procps" package installed
++ git-client for cloning this repository
 
 ## INSTALLATION
 
@@ -26,10 +29,16 @@ Gerard Kanduth <gerardraffael.kanduth@edu.fh-kaernten.ac.at>
 
 ### Install needed packages
 
-On Fedora/RedHat:
+Fedora/RedHat:
 ```
-dnf install gcc gcc-c++ rpm-build libcurl libcurl-devel
+dnf install git gcc gcc-c++ make rpm-build libcurl libcurl-devel
 ```
+
+Debian/Ubuntu:
+```
+apt install git build-essential g++ libcurl4-gnutls-dev
+```
+**Note:** Currently only RPMs can be generated via "make all". Therefore only "make pmdaemon" is currently available for Debian-based Distributions.
 
 ### Clone the repository
 ```
@@ -39,13 +48,13 @@ git clone https://github.com/gerard-kanduth/pmdaemon.git
 cd pmdaemon
 ```
 
-### Build and package to RPM
+### Build and package to RPM (Fedora/RedHat only)
 **Note:** It is possible to simply build the project without packing by running "make pmdaemon" instead.
 ```
 make all
 ```
 
-### Install RPM on system
+### Install RPM on system (Fedora/RedHat only)
 ```
 rpm -i $HOME/rpmbuild/RPMS/x86_64/pmdaemon*.rpm
 ```
