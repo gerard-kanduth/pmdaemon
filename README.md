@@ -35,7 +35,7 @@ dnf install gcc gcc-c++ rpm-build libcurl libcurl-devel
 ```
 if ! $(test -d /srv); then mkdir /srv; fi
 cd /srv
-git clone https://github.com/gerard.kanduth/pmdaemon.git
+git clone https://github.com/gerard-kanduth/pmdaemon.git
 cd pmdaemon
 ```
 
