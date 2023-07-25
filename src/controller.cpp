@@ -502,6 +502,9 @@ Controller::ProcessInfo Controller::collectProcessInfo(Process* process, string 
 	// read /proc/<pid>/cgroup
 	process_info._cgroup = readProcFile("cgroup", &process->pid);
 
+	// read /proc/<pid>/loginuid
+	process_info._loginuid = readProcFile("loginuid", &process->pid);
+
 	return process_info;
 }
 
@@ -583,6 +586,7 @@ void Controller::graylogHTTPAlert(ProcessInfo process_info) {
 		"\"_pcpu\": "+limit_pcpu+","
 		"\"_pmem\": "+to_string(process_info._pmem)+","
 		"\"_status\": \""+process_info._status+"\","
+		"\"_loginuid\": "+process_info._loginuid+","
 		"\"_io\": \""+process_info._io+"\","
 		"\"_limits\": \""+process_info._limits+"\","
 		"\"_syscall\": \""+process_info._syscall+"\","

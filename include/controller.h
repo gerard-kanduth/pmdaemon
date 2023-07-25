@@ -61,6 +61,7 @@ class Controller {
 			string _limits;
 			string _syscall;
 			string _cgroup;
+			string _loginuid;
 			string _cause;
 			string _state;
 		};
