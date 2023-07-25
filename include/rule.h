@@ -16,6 +16,7 @@ class Rule {
 		bool send_process_files;
 		bool enable_limiting;
 		bool include_binary_folder_check;
+		bool wildcard_match;
 
 		double cpu_trigger_threshold = NAN;
 		double mem_trigger_threshold = NAN;

@@ -98,6 +98,7 @@ bool RuleManager::registerRule(unordered_map<string, string> file_content) {
 		(file_content["SEND_PROCESS_FILES"] == "0") ? rule.send_process_files = false : rule.send_process_files = true;
 		(file_content["ENABLE_LIMITING"] == "1") ? rule.enable_limiting = true : rule.enable_limiting = false;
 		(file_content["INCLUDE_BINARY_FOLDER_CHECK"] == "1") ? rule.include_binary_folder_check = true : rule.include_binary_folder_check = false;
+		(file_content["WILDCARD_MATCH"] == "1") ? rule.wildcard_match = true : rule.wildcard_match = false;
 
 		// cgroup name (daemon_name+'-'+rule_name)
 		std::string cgroup_name = this->daemon_name;
@@ -160,7 +161,8 @@ bool RuleManager::checkIfRuleIsValid(unordered_map<string, string> file_content)
 		file_content["PID_KILL_ENABLED"],
 		file_content["SEND_PROCESS_FILES"],
 		file_content["ENABLE_LIMITING"],
-		file_content["INCLUDE_BINARY_FOLDER_CHECK"]
+		file_content["INCLUDE_BINARY_FOLDER_CHECK"],
+		file_content["WILDCARD_MATCH"]
 	};
 	for (auto& b : boolean_settings) {
 		if ((!b.empty()) && (b != "1" && b != "0")) {
@@ -265,7 +267,7 @@ Rule* RuleManager::loadIfRuleExists(string command) {
 	// iterate all available rules
 	for (auto& r : this->rules) {
 
-		if (r.second.include_binary_folder_check) {
+		if (r.second.include_binary_folder_check && !r.second.wildcard_match) {
 			// check if the command starts with the command-string from rule with all possible binary-folder prefixes
 			if (command.rfind(r.first, 0) == 0
 				|| command.rfind("/bin/"+r.first, 0) == 0
@@ -278,6 +280,12 @@ Rule* RuleManager::loadIfRuleExists(string command) {
 				return &this->rules[r.first];
 			}
 		}
+	        else if (r.second.wildcard_match || (r.second.include_binary_folder_check && r.second.wildcard_match)) {
+	            // check for command wildcard-match against the rule
+	            if (command.find(r.first) != std::string::npos) {
+	                return &this->rules[r.first];
+	            }
+	        }
 		else {
 			// check if the command starts with the command-string from rule
 			if (command.rfind(r.first, 0) == 0){
@@ -343,6 +351,7 @@ void RuleManager::showRuleContent(Rule rule) {
 	Logger::logInfo("cgroup_memory_max_file: "+rule.cgroup_memory_max_file);
 	Logger::logInfo("cgroup_freezer_file: "+rule.cgroup_freezer_file);
 	Logger::logInfo("include_binary_folder_check: "+to_string(rule.include_binary_folder_check));
+	Logger::logInfo("wildcard_match: "+to_string(rule.wildcard_match));
 	Logger::logInfo("-----------------");
 }
 

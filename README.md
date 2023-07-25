@@ -195,6 +195,15 @@ By enabling INCLUDE_BINARY_FOLDER_CHECK the following variations will also be ch
 INCLUDE_BINARY_FOLDER_CHECK=1
 ```
 
+It is possible to enable a wildcard-check by activating the WILDCARD_MATCH option
+The defined COMMAND string only needs to be included in the actual command to trigger this rule
+(e.g. "COMMAND=stress" would also trigger the rule if the command would be "/home/user/bin/aliased_stress --cpu 1")
+
+(0=off, 1=on)
+```
+WILDCARD_MATCH=0
+```
+
 Set a threshold for CPU and MEM (in percent, floating-point)
 As soon as the process is above this values it will be added to the penalty-list
 ```
