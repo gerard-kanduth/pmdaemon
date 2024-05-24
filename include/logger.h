@@ -1,9 +1,9 @@
 #ifndef LOGGER
 #define LOGGER
 
-#include <syslog.h>
 #include <iostream>
-#include <string>
+#include <syslog.h>
+#include "datatypes.h"
 
 using namespace std;
 
@@ -12,32 +12,26 @@ class Logger {
 
 	private:
 
-		static Logger logger_Instance;
-		string log_level;
-		string log_message;
-		const char *daemon_name = nullptr;
+        	Logger();
+        	static Logger *loginstance;
 
-		// no use of constructor - class is singleton
-		Logger(){}
-		void instanceSetLogLevel(string);
-		void instanceLogInfo(string);
-		void instanceLogNotice(string);
-		void instanceLogDebug(string);
-		void instanceLogError(string);
+		string log_message;
+        	LogLevel log_level;
 
 	public:
 
-		// only instance can be created
-		static Logger& getInstance() {
-			return logger_Instance;
-		}
-		static string getLogLevel();
-		static void setLogLevel(string);
-		static void logInfo(string);
-		static void logNotice(string);
-		static void logDebug(string);
-		static void logError(string);
-		static void setDaemonName(const char*);
+        	// only one instance can be created
+		static Logger* getInstance();
+
+        	string SEPARATOR_LINE = string(50, '-');
+
+        	void setLogLevel(string, int);
+		void logInfo(string);
+		void logNotice(string);
+		void logDebug(string);
+		void logError(string);
+        	LogLevel getLogLevel();
+
 };
 
 #endif

@@ -1,20 +1,18 @@
 #ifndef CONTROLLER
 #define CONTROLLER
 
-#include <cctype>
-#include <cmath>
-#include <iostream>
-#include <iomanip>
 #include <curl/curl.h>
 #include <limits>
+#include <pwd.h>
 #include <unordered_map>
-#include <sstream>
+#include <unordered_set>
+#include <signal.h>
 #include <stdio.h>
-#include <string>
-#include <unistd.h>
 #include "logger.h"
 #include "rulemanager.h"
 #include "settings.h"
+#include "datatypes.h"
+#include "utils.h"
 
 using namespace std;
 
@@ -22,80 +20,42 @@ class Controller {
 
 	private:
 
-		// cgroup list struct
-		struct CgroupListItem {
-			int pid;
-			string cgroup;
-		};
+        	// Logger Instance
+        	Logger* logger = nullptr;
 
-		// struct for a process
-		struct Process {
-			int pid;
-			string state;
-			string user;
-			double pcpu;
-			double pmem;
-			string command;
-		} current_process;
+        	// Settings Instance
+        	Settings* settings = nullptr;
 
-		// penalty list-item
-		struct PenaltyListItem {
-			int pid;
-			int penalty_counter;
-			int cooldown_counter;
-			string penalty_cause;
-			string cgroup_name;
-			bool alerted = false;
-			bool in_cgroup = false;
-			bool limited = false;
-		};
+        	// retrieve the page-size (needed for RAM calculation)
+        	const long page_size = sysconf(_SC_PAGESIZE);
 
-		// advanced process information
-		struct ProcessInfo {
-			int _pid;
-			double _pcpu;
-			double _pmem;
-			string _command;
-			string _status;
-			string _io;
-			string _limits;
-			string _syscall;
-			string _cgroup;
-			string _loginuid;
-			string _cause;
-			string _state;
-		};
+        	// retrieve the daemon's PID
+        	const pid_t daemon_pid = getpid();
 
 		// penalty list
-		unordered_map<int,PenaltyListItem> penalty_list;
-		unordered_map<int,PenaltyListItem>::iterator it;
+        	unordered_map<long, PenaltyListItem> penalty_list;
+        	unordered_map<long, PenaltyListItem>::iterator penalty_list_it;
 
-		// settings object (contains all settings)
-		Settings* settings = nullptr;
+        	// global penalty list
+        	unordered_map<long, GlobalPenaltyListItem> global_penalty_list;
+        	unordered_map<long, GlobalPenaltyListItem>::iterator global_penalty_list_it;
+
+        	// pid list (needed for pcpu calculation)
+        	unordered_map<long, unsigned long long> pcpu_pid_list;
+        	unordered_set<long> current_pids;
 
 		// rules object (contains all loaded rules)
 		RuleManager* rulemanager = nullptr;
-
+		
 		// pointer for specific rule
 		Rule* specific_rule = nullptr;
-
-		// the name of the daemon
-		const char* daemon_name;
-
+		
 		// curl instance used for http logging
 		// libcurl, see: https://curl.se/libcurl
 		CURL* curl = nullptr;
-		CURLcode curl_result;
 
-		// the comand which will be constantly checked "2>&1" used to get stderr
-		string command = "ps -e -ww --no-headers -o %p\\; -o stat -o \\;%U -o \\;%C\\; -o %mem -o \\;%a 2>&1";
-
-		// main cgroup.procs file which contains all pids which are not part of a specific cgroup
-		string main_cgroup_procs_file = "/sys/fs/cgroup/cgroup.procs";
-
-		// additional buffer and pipe for reading output
-		array<char, 128> input_buffer;
-		string check_result;
+        	// current PID file of /proc directory
+        	string proc_pid_file;
 
 		// number of failed checks
 		int error_checks = 0;
@@ -107,41 +67,50 @@ class Controller {
 		char hostname_buffer[128];
 		const char* hostname = nullptr;
 
-		// helper variables
-		size_t next_semi_colon_pos;
-		string ps_line;
-		string c_pid;
-		string c_state;
-		string c_user;
-		string c_pcpu;
-		string c_pmem;
-		string c_command;
+        	// file output
+        	string out_cmdline;
 
-		// used to limit trailing zeroes on measured values
-		char limit_pcpu[128];
-		char limit_pmem[128];
+        	// current process which will be handled
+        	Process c_process;
+        	long c_process_pid;
+
+        	// parsed /proc/stat file
+        	ProcSysStat system_stat;
+        	unsigned long long sys_last_total_time;
+
+        	// helper variables
+        	struct passwd *pwd;
+        	struct stat stat_buf;
+
+			// used to limit trailing zeroes on measured values
+        	char limit_pcpu[32];
+        	char limit_pmem[32];
 
 		// default limits (if no specific rule is set for process)
 		bool state_trigger;
 		bool load_rules;
 		bool specific_rules_check_only;
 		bool term_cgroup_cleanup;
-		double default_cpu_trigger_threshold;
-		double default_mem_trigger_threshold;
-		int default_checks_before_alert;
+        	bool global_action_enabled;
+        	bool specific_proc_rule;
+
 		int checks_cooldown;
+        	int max_alerts_global_action;
+        	GlobalAction global_action;
+        	set<string> whitelisted_users;
 
-		// enable_limiting can only be enabled in specific_rules
-		bool default_enable_limiting = false;
-		bool* enable_limiting = &default_enable_limiting;
+        	// defaults which will be used, can be overwritten by specific rule
+        	int default_checks_before_alert;
+        	int* checks_before_alert = &default_checks_before_alert;
 
-		// send_process_files can only be disabled in specific_rules
-		bool send_process_files;
+        	double default_cpu_trigger_threshold;
+        	double* cpu_trigger_threshold = &default_cpu_trigger_threshold;
 
-		// the defaults will be used if LOAD_RULES is disabled
-		int* checks_before_alert = &default_checks_before_alert;
-		double* cpu_trigger_threshold = &default_cpu_trigger_threshold;
-		double* mem_trigger_threshold = &default_mem_trigger_threshold;
+        	long long default_mem_trigger_threshold;
+        	long long* mem_trigger_threshold = &default_mem_trigger_threshold;
+
+        	bool default_send_notifications;
+        	bool* send_notifications = &default_send_notifications;
 
 		// graylog related variables
 		bool graylog_enabled;
@@ -149,47 +118,56 @@ class Controller {
 		int graylog_port;
 		string graylog_fqdn;
 		string graylog_http_path;
-		string graylog_transport_method;
 		string graylog_http_protocol_prefix;
 		string graylog_final_url;
+        	TransportType graylog_transport_method;
 
 		// graylog message variables
 		double graylog_message_version = 1.1;
 		int graylog_message_level = 1;
 
+        	// logstash related variables
+        	bool logstash_enabled;
+        	bool logstash_http_secure;
+        	int logstash_port;
+        	string logstash_fqdn;
+        	string logstash_http_path;
+        	string logstash_http_protocol_prefix;
+        	string logstash_final_url;
+        	TransportType logstash_transport_method;
+
 		// private functions
-		ProcessInfo collectProcessInfo(Process*, string);
-		bool addPidToCgroup(string*, int*);
+        	ProcessInfo collectProcessInfo(Process*, string);
+        	bool fetchProcessInfo(long);
+        	bool addPIDToCgroup(string*, long*);
+        	bool addPidToJail(long);
 		bool checkProcess(Process*);
-		bool curlPostJSON(const char*);
-		bool checkIfCgroupEmpty(string*, int*);
+        	bool curlPostJSON(const char*, MessageCollector);
+        	bool checkIfCgroupEmpty(string*, long*);
 		bool checkPenaltyList(Process*, string);
 		bool cleanupPenaltyList();
-		bool createCgroup(string*, int*);
+        	bool createPIDCgroup(string*, long*);
+        	bool createJailPIDCgroup(string);
+        	bool createJailCgroup(double, long long);
 		bool doLimit(Process*);
 		bool enableCgroupControllers();
-		bool iterateProcessList(string);
+        	bool iterateProcessList();
+        	bool pidPause(long);
+        	bool pidKill(long);
 		bool removeCgroup(string);
-		bool removePidFromCgroup(int);
-		string readProcFile(string, int*);
-		void graylogAlert(ProcessInfo);
-		void graylogHTTPAlert(ProcessInfo);
-		void graylogUDPAlert(ProcessInfo);
-		void graylogTCPAlert(ProcessInfo);
-		void graylogLimitInfo(Process*);
-		void graylogHTTPlimitInfo(Process*);
-		void graylogUDPlimitInfo(Process*);
-		void graylogTCPlimitInfo(Process*);
+        	bool removePidFromCgroup(long);
+        	string readProcFile(string, long*);
+        	void SendMessage(ProcessInfo, MessageType);
 
 	public:
 
 		// public functions
-		Controller(const char*, Settings*&);
+        	Controller();
 		~Controller();
-		bool cleanupCgroups();
+        	bool cleanupCgroups(bool);
 		bool doCheck();
-		bool terminate();
-		void showInformation();
+        	bool controllerShutdown();
+        	void showInformation(bool);
 
 };
 

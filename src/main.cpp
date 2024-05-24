@@ -1,6 +1,7 @@
 #include <csignal>
 #include <iostream>
 #include <string>
+#include <stdlib.h>
 #include <unistd.h>
 #include "controller.h"
 #include "logger.h"
@@ -9,20 +10,14 @@
 
 using namespace std;
 
-// name of the daemon
-const char* daemon_name = "pmdaemon";
-
 // logger instance (singleton-class)
-Logger Logger::logger_Instance;
+Logger *logger = nullptr;
 
 // controller-object
 Controller* controller = nullptr;
 
 // settings object (contains all settings)
 Settings* settings = nullptr;
-
-// settings file
-const char* settings_file = "/etc/pmdaemon/settings.conf";
 
 // boolean which defines if daemon is running
 bool running = true;
@@ -37,27 +32,27 @@ void signalHandler(int signal) {
 
 		// SIGTERM signal
 		case 15:
-			if(controller->terminate()) {exit(0);} else {exit(1);}
+           running = false;
 			break;
 
 		// SIGABRT signal
 		case 6:
-			if(controller->terminate()) {exit(0);} else {exit(1);}
+           running = false;
 			break;
 
 		// SIGUSR1 signal
 		case 10:
-			controller->cleanupCgroups();
+            controller->cleanupCgroups(false);
 			break;
 
 		// SIGUSR2 signal
 		case 12:
-			controller->showInformation();
+            controller->showInformation(true);
 			break;
 
 		// unknown signals
 		default:
-			cerr << daemon_name << " received unknown signal (" << to_string(signal) << ")!";
+            cerr << DAEMON_NAME << " received unknown signal (" << to_string(signal) << ")!";
 			break;
 
 	}
@@ -69,45 +64,45 @@ int main() {
 
     // register all needed signals to the signal handler
     signal(SIGTERM, signalHandler);
-	signal(SIGABRT, signalHandler);
-	signal(SIGUSR1, signalHandler);
-	signal(SIGUSR2, signalHandler);
+    signal(SIGABRT, signalHandler);
+    signal(SIGUSR1, signalHandler);
+    signal(SIGUSR2, signalHandler);
 
 	// initialize a singleton instance for the logger
-	Logger::getInstance();
-	Logger::setDaemonName(daemon_name);
+    logger = Logger::getInstance();
 
 	// load the configuration file
-	settings = new Settings(settings_file);
+    settings = Settings::getInstance();
 
 	// terminate if configuration is broken or not available
 	if (!settings->configAvailable()){
-		Logger::logError("Unable to load configuration! Stopping!");
+        logger->logError("Unable to load configuration! Stopping!");
 		return 1;
 	}
 
 	// set the loglevel for the Logger
-	Logger::setLogLevel(settings->getLogLevel());
+    logger->setLogLevel(settings->getLogLevel(), settings->getDebugLevel());
 
 	// set settings defined in settings-file
 	check_interval = settings->getCheckInterval();
 
 	// initializing the controller
-	controller = new Controller(daemon_name, settings);
+    controller = new Controller();
 
 	/* --- start check routine --- */
-	Logger::logNotice("Starting "+std::string(daemon_name)+" monitoring ...");
-	while(running) {
+    logger->logNotice("Starting " DAEMON_NAME " monitoring");
+    while(running) {
 
-		// run a check-cycle (exit if too many faulty checks)
-		if (controller->doCheck() == false)
-			return 1;
+        // run a check-cycle (exit if too many faulty checks)
+        if (controller->doCheck() == false)
+            return 1;
 
-		// wait before next check
-		sleep(check_interval);
-	}
+        // wait before next check
+        sleep(check_interval);
+    }
 	/* --- end check routine --- */
 
-	return 0;
+    if (controller->controllerShutdown()) return 0;
+    else return 1;
 
 }

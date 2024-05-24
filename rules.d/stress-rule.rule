@@ -1,0 +1,72 @@
+# Name of the rule
+RULE_NAME=stress-rule
+
+# Command which will be monitored (can either be "/usr/bin/stress" or simply "stress")
+# The command needs to start with this string to get monitored
+COMMAND=stress
+
+# It would be possible to match a regex-pattern instead of using the COMMAND setting to search for processes
+# REGEX_SEARCH_PATTERN=^.*stress.*$
+# REGEX_SEARCH_ENABLED=1
+
+# If you define the COMMAND e.g. "stress", only processes starting with exact "stress" will be monitored
+# However, a user may start the command with "/bin/stress" or "/usr/bin/stress"
+# By enabling INCLUDE_BINARY_FOLDER_CHECK the following variations will also be checked:
+#
+# /bin/stress
+# /sbin/stress
+# /usr/bin/stress
+# /usr/sbin/stress
+# /usr/local/bin/stress
+# /usr/local/sbin/stress
+#
+# (0=off, 1=on)
+INCLUDE_BINARY_FOLDER_CHECK=1
+
+# It is possible to enable a wildcard check by activating the WILDCARD_MATCH option.
+# Enable wildcard command checking (COMMAND string must only be part of the actual command to trigger this rule)
+# e.g. "COMMAND=stress" would also trigger the rule if the command would be "/home/user/bin/aliased_stress --cpu 1"
+WILDCARD_MATCH=0
+
+# Set a threshold for CPU (in percent) and MEM (in percent or absolute value)
+# As soon as the process is above this values it will be added to the penalty-list
+CPU_TRIGGER_THRESHOLD=20.0%
+MEM_TRIGGER_THRESHOLD=5M
+
+# The CHECK_INTERVAL (in seconds) and the default CHECKS_BEFORE_ALERT is set in the settings.conf file
+# This setting can be overwritten for specific commands by simply setting CHECKS_BEFORE_ALERT here
+CHECKS_BEFORE_ALERT=3
+
+# Decide if limiting on the given process should be performed, otherwise only alerting and data-collecting will be done
+# (0=off, 1=on)
+ENABLE_LIMITING=1
+
+# Limit the given process to the following core limit (in percent)
+# (Percentage) 0% - 100%, 0.0% - 100.0%
+LIMIT_CPU_PERCENT=5.0%
+
+# Limit the given process to the following memory limit
+# No memory limitation will be done if this setting is not set in a rule
+# (Percentage) 0% - 100%, 0.0% - 100.0%, (Absolute) 1B, 1024K, 10M, 2G, etc., (0 is not allowed)
+LIMIT_MEMORY_VALUE=5M
+
+# Decide if the OOM-Killer should be invoked if the memory-limit is reached
+# (0=off, 1=on)
+OOM_KILL_ENABLED=1
+
+# Decide if the process should be checked, otherwise no limiting and/or alerting will be performed
+# (0=off, 1=on)
+NO_CHECK=0
+
+# This option will put the PID to the freezer - process will be "paused"
+# PID_KILL_ENABLED will override this setting since the PID will be killed.
+# (0=off, 1=on)
+FREEZE=0
+
+# This option activates the termination of a process as soon as it was above the threshold limits for CHECK_INTERVAL * CHECKS_BEFORE_ALERT (in seconds)
+# (0=off, 1=on)
+PID_KILL_ENABLED=0
+
+# Decide if notifications and collected data should be send to data collectors for further analysis
+# (0=off, 1=on)
+SEND_NOTIFICATIONS=1

@@ -1,6 +1,6 @@
 Name:     	pmdaemon
-Version:  	1.0
-Release:  	3%{?dist}
+Version:  	1.1
+Release:  	1%{?dist}
 Summary:  	Process Monitoring Daemon package
 License:  	GPLv3+
 URL:      	https://github.com/gerard-kanduth/pmdaemon
@@ -27,7 +27,7 @@ mkdir -p %{buildroot}/usr/lib/systemd/system
 install -m 755 build/usr/sbin/pmdaemon %{buildroot}/usr/sbin/pmdaemon
 install -m 644 systemd/pmdaemon.service %{buildroot}/usr/lib/systemd/system/pmdaemon.service
 install -m 644 settings.conf %{buildroot}/etc/pmdaemon/settings.conf
-install -m 644 rules.d/stress-rule.conf %{buildroot}/etc/pmdaemon/rules.d/stress-rule.conf
+install -m 644 rules.d/stress-rule.rule %{buildroot}/etc/pmdaemon/rules.d/stress-rule.rule
 systemctl daemon-reload
 
 %files
@@ -36,6 +36,9 @@ systemctl daemon-reload
 /etc/pmdaemon
 
 %changelog
+* Fri May 24 2024 Gerard Raffael Kanduth <gerardraffael.kanduth@edu.fh-kaernten.ac.at> - 1.1
+- Version updated to 1.1
+- Renamed example-rule to stress-rule.rule
 * Tue Jan 03 2023 Gerard Raffael Kanduth <gerardraffael.kanduth@edu.fh-kaernten.ac.at> - 1.0
 - Initial version of the package
 
