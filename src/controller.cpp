@@ -44,13 +44,13 @@ Controller::Controller() {
 
             if (graylog_http_secure)
                 graylog_http_protocol_prefix = "https://";
-			else
+            else
                 graylog_http_protocol_prefix = "http://";
             graylog_final_url = graylog_http_protocol_prefix + graylog_fqdn + ":" + to_string(graylog_port) + graylog_http_path;
 
             logger->logInfo("Alerts will be forwarded to " + graylog_final_url);
-		}
-	}
+        }
+    }
 
     if (logstash_enabled) {
         logstash_transport_method = settings->getLogstashTransportMethod();
@@ -72,14 +72,14 @@ Controller::Controller() {
     }
 
     if ((graylog_enabled || logstash_enabled) && (graylog_transport_method == HTTP || logstash_transport_method == HTTP)) {
-            // setup the curl environment
-            // libcurl, see: https://curl.se/libcurl/c/curl_global_init.html
-            curl_global_init(CURL_GLOBAL_ALL);
+        // setup the curl environment
+        // libcurl, see: https://curl.se/libcurl/c/curl_global_init.html
+        curl_global_init(CURL_GLOBAL_ALL);
     }
 
     // controllers for cgroupv2 needs to be enabled for jail and/or cgroup rules
     if (global_action == ACTION_JAIL || load_rules) {
-        if (!enableCgroupControllers())	exit(EXIT_FAILURE);
+        if (!enableCgroupControllers())    exit(EXIT_FAILURE);
     }
 
     if (global_action == ACTION_JAIL) {
@@ -89,56 +89,54 @@ Controller::Controller() {
         }
     }
 
-	// load rules if not deactivated in the settings
-	if (load_rules) {
+    // load rules if not deactivated in the settings
+    if (load_rules) {
         rulemanager = new RuleManager(settings->getRulesDir());
-	}
+    }
 
 }
 
 Controller::~Controller() {
     logger->logInfo("Terminating the controller");
 
-	// cleanup of curl environment
-	// libcurl, see: https://curl.se/libcurl/c/curl_global_cleanup.html
-	curl_global_cleanup();
+    // cleanup of curl environment
+    // libcurl, see: https://curl.se/libcurl/c/curl_global_cleanup.html
+    curl_global_cleanup();
 }
 
 bool Controller::doCheck() {
     logger->logDebug("[ Checking processes ]");
-	try {
+    try {
 
-		// iterate over process-list and check processes
-        if (!iterateProcessList())
-			throw 1;
+        // iterate over process-list and check processes
+        if (!iterateProcessList()) throw 1;
 
         // penalty list needs to be cleaned
-		if (!cleanupPenaltyList())
-			throw 1;
+        if (!cleanupPenaltyList()) throw 1;
 
-	// catch if an error occurs during check-cycle
-	} catch (...) {
+    // catch if an error occurs during check-cycle
+    } catch (...) {
         logger->logError("Unable to iterate process list!");
-		error_checks++;
+        error_checks++;
 
-		// terminate if number of failed checks exceeded
-		if (error_checks >= max_errors){
+        // terminate if number of failed checks exceeded
+        if (error_checks >= max_errors){
             logger->logError("More than " + to_string(max_errors)+ " errors during check-routine! Terminating Daemon ...");
-			return false;
-		}
-	}
-	return true;
+            return false;
+        }
+    }
+    return true;
 }
 
 bool Controller::enableCgroupControllers() {
     logger->logInfo("Enabling needed cgroup2 controllers");
 
     if (Utils::writeToFile(CGROUP_SUBCONT_FILE, "+cpu +cpuset +memory +pids\n")) {
-		return true;
-	} else {
+        return true;
+    } else {
         logger->logError("Unable to enable controllers! Terminating.");
-		return false;
-	}
+        return false;
+    }
 
 }
 
@@ -218,12 +216,12 @@ bool Controller::fetchProcessInfo(long pid) {
 }
 
 bool Controller::iterateProcessList() {
-	try {
+    try {
 
         // need to be done since a new object will be created
-        if (system_stat.total_time != 0)
-            sys_last_total_time = system_stat.total_time;
+        if (system_stat.total_time != 0) sys_last_total_time = system_stat.total_time;
 
+        // system time-delta is used for pcpu calculation
         system_stat = Utils::parseStatFile();
         system_stat.last_total_time = sys_last_total_time;
         system_stat.delta_total_time = (system_stat.total_time - system_stat.last_total_time) / system_stat.active_cores;
@@ -241,21 +239,17 @@ bool Controller::iterateProcessList() {
 
                 proc_pid_file = file.path().filename().string();
 
-                if (is_directory(file.path()) && regex_match(proc_pid_file, regex(REGEX_PID_VALUE))) {
+                if (is_directory(file.path()) && regex_match(proc_pid_file, regex_pid_value)) {
 
                     c_process_pid = stol(proc_pid_file);
                     current_pids.insert(c_process_pid);
 
                     // don't check daemon's own pid
-                    if (c_process_pid == daemon_pid)
-                        continue;
+                    if (c_process_pid == daemon_pid) continue;
 
-                    if (fetchProcessInfo(c_process_pid)) {
+                    // check the current process
+                    if (fetchProcessInfo(c_process_pid)) checkProcess(&c_process);
 
-                        // check the current process
-                        checkProcess(&c_process);
-
-                    }
                 }
             }
 
@@ -265,21 +259,19 @@ bool Controller::iterateProcessList() {
 
         }
 
-	} catch (...) {
+    } catch (...) {
         logger->logError("Something went wrong while iterating the process list!");
-		return false;
-	}
+        return false;
+    }
 
     // erase PIDs from the monitoring which are no longer alive
     for (auto it = pcpu_pid_list.begin(); it != pcpu_pid_list.end();)
     {
-        if (current_pids.find(it->first) == current_pids.end())
-            it = pcpu_pid_list.erase(it);
-        else
-            ++it;
+        if (current_pids.find(it->first) == current_pids.end()) it = pcpu_pid_list.erase(it);
+        else ++it;
     }
 
-	return true;
+    return true;
 }
 
 bool Controller::checkProcess(Process* process) {
@@ -305,13 +297,12 @@ bool Controller::checkProcess(Process* process) {
 
             specific_proc_rule = true;
 
-			// skip command if the NO_CHECK setting is set in rule
+            // skip command if the NO_CHECK setting is set in rule
             if (specific_rule->no_check) {
-                if (logger->getLogLevel() >= DEBUG1)
-                    logger->logDebug("Skipping PID '" + to_string(process->pid) + "' due to NO_CHECK in rule " + specific_rule->rule_name);
-				return true;
+                if (logger->getLogLevel() >= DEBUG1) logger->logDebug("Skipping PID '" + to_string(process->pid) + "' due to NO_CHECK in rule " + specific_rule->rule_name);
+                return true;
 
-			} else {
+            } else {
 
                 // load all available settings from specific rule
                 // default values from settings-file will be used if value is '-1'
@@ -320,12 +311,11 @@ bool Controller::checkProcess(Process* process) {
                 (specific_rule->checks_before_alert != -1) ? checks_before_alert = &specific_rule->checks_before_alert : checks_before_alert = &default_checks_before_alert;
                 send_notifications = &specific_rule->send_notifications;
 
-                if (logger->getLogLevel() == DEBUG2)
-                    logger->logDebug("Checking '" + process->command + "' with PID '" + to_string(process->pid) + "' using rule '" + specific_rule->rule_name + "'");
+                if (logger->getLogLevel() == DEBUG2) logger->logDebug("Checking '" + process->command + "' with PID '" + to_string(process->pid) + "' using rule '" + specific_rule->rule_name + "'");
 
-			}
+            }
 
-		} else {
+        } else {
 
             // needs to be set before dropping out if SPECIFIC_RULES_CHECK_ONLY is enabled
             cpu_trigger_threshold = &default_cpu_trigger_threshold;
@@ -334,13 +324,11 @@ bool Controller::checkProcess(Process* process) {
             send_notifications = &default_send_notifications;
             specific_proc_rule = false;
 
-			// do not check processes if SPECIFIC_RULES_CHECK_ONLY is enabled
-            if (specific_rules_check_only) {
-				return true;
-			}
+            // do not check processes if SPECIFIC_RULES_CHECK_ONLY is enabled
+            if (specific_rules_check_only) return true;
 
-		}
-	}
+        }
+    }
 
     // check if threshold is reached, add the PID to penalty list if so
     // value of '0' will disable the CPU monitoring
@@ -348,7 +336,7 @@ bool Controller::checkProcess(Process* process) {
         logger->logDebug("PID " + to_string(process->pid)+ " has a load of " + to_string(process->pcpu)
                          + " [Limit: " + to_string(*cpu_trigger_threshold) + " %]");
          return checkPenaltyList(process, "cpu");
-	}
+    }
 
     // memory can either be compared in percent or absolute values but will always be compared with RSS value of PID
     // value of '0' will disable the memory monitoring
@@ -361,18 +349,18 @@ bool Controller::checkProcess(Process* process) {
 
     // check the status of the process if STATE_TRIGGER is enabled
     if (state_trigger) {
-		if (process->state == "Z") {
-            logger->logDebug("PID " + to_string(process->pid)+ " state changed to ZOMBIE (" + process->state + ")");
-			return checkPenaltyList(process, "zombie");
-		}
+        if (process->state == "Z") {
+            logger->logDebug("PID " + to_string(process->pid) + " state changed to ZOMBIE (" + process->state + ")");
+            return checkPenaltyList(process, "zombie");
+        }
 
         if (process->state == "D") {
-            logger->logDebug("PID " + to_string(process->pid)+ " state changed to UNINTERRUPTIBLE SLEEP (" + process->state + ")");
-			return checkPenaltyList(process, "dstate");
-		}
-	}
+            logger->logDebug("PID " + to_string(process->pid) + " state changed to UNINTERRUPTIBLE SLEEP (" + process->state + ")");
+            return checkPenaltyList(process, "dstate");
+        }
+    }
 
-	return true;
+    return true;
 
 }
 
@@ -388,9 +376,7 @@ bool Controller::checkPenaltyList(Process *process, string penalty_cause) {
 
         logger->logDebug("PID " + to_string(process->pid) + " is already on penalty list.");
 
-        if (!penalty_list_it->second.in_cgroup && !penalty_list_it->second.alerted) {
-            penalty_list_it->second.penalty_counter++;
-        }
+        if (!penalty_list_it->second.in_cgroup && !penalty_list_it->second.alerted) penalty_list_it->second.penalty_counter++;
 
         // alert if not already alerted
         if (penalty_list_it->second.penalty_counter >= *checks_before_alert
@@ -400,8 +386,7 @@ bool Controller::checkPenaltyList(Process *process, string penalty_cause) {
             penalty_list_it->second.penalty_counter = 0;
 
             if (*send_notifications) {
-                if (graylog_enabled || logstash_enabled)
-                    SendMessage(collectProcessInfo(process, penalty_cause), ALERT);
+                if (graylog_enabled || logstash_enabled) SendMessage(collectProcessInfo(process, penalty_cause), ALERT);
             }
 
             // check if pid is on global_penalty_list if enabled
@@ -464,8 +449,10 @@ bool Controller::checkPenaltyList(Process *process, string penalty_cause) {
                     }
 
                 } else if (global_penalty_list_it != global_penalty_list.end() && global_penalty_list_it->second.in_cgroup) {
+
                     // simply continue if PID was already limited
                     return true;
+
                 } else {
                     // add the pid to the global penalty list if not found
                     GlobalPenaltyListItem global_penalty_pid;
@@ -500,7 +487,6 @@ bool Controller::checkPenaltyList(Process *process, string penalty_cause) {
                             logger->logInfo("ACTION: limit" + ss.str());
                             if (*send_notifications && (graylog_enabled || logstash_enabled))
                                 SendMessage(collectProcessInfo(process, penalty_cause), LIMIT);
-
                     } else {
                         logger->logError("[" + specific_rule->rule_name + "] Unable to add PID " + to_string(process->pid) + " to cgroup " + specific_rule->cgroup_name);
                     }
@@ -568,43 +554,39 @@ bool Controller::checkPenaltyList(Process *process, string penalty_cause) {
 }
 
 bool Controller::pidPause(long pid) {
-    if (kill(pid, SIGSTOP) == 0)
-        return true;
-    else
-        return false;
+    if (kill(pid, SIGSTOP) == 0) return true;
+    else return false;
 }
 
 bool Controller::pidKill(long pid) {
-    if (kill(pid, SIGKILL) == 0)
-        return true;
-    else
-        return false;
+    if (kill(pid, SIGKILL) == 0) return true;
+    else return false;
 }
 
 bool Controller::cleanupPenaltyList() {
 
     // penalty list cleanup
-	if (!penalty_list.empty()) {
+    if (!penalty_list.empty()) {
 
         penalty_list_it = penalty_list.begin();
         while (penalty_list_it != penalty_list.end()) {
 
             if (fs::exists(PROC_DIR "/" + to_string(penalty_list_it->first))) {
                 penalty_list_it++;
-			} else {
+            } else {
                 penalty_list_it = penalty_list.find(penalty_list_it->first);
 
                 if (penalty_list_it->second.limited) {
                     removeCgroup(penalty_list_it->second.cgroup_name);
-				}
+                }
 
                 logger->logInfo("Removing PID " + to_string(penalty_list_it->first) + " from penalty list");
                 penalty_list.erase(penalty_list_it);
                 penalty_list_it = penalty_list.end();
-				break;
-			}
-		}
-	}
+                break;
+            }
+        }
+    }
 
     // global penalty list cleanup
     if (global_action_enabled && !global_penalty_list.empty()) {
@@ -617,9 +599,7 @@ bool Controller::cleanupPenaltyList() {
             } else {
                 global_penalty_list_it = global_penalty_list.find(global_penalty_list_it->first);
 
-                if (global_penalty_list_it->second.in_cgroup) {
-                    removeCgroup(global_penalty_list_it->second.cgroup_name);
-                }
+                if (global_penalty_list_it->second.in_cgroup) removeCgroup(global_penalty_list_it->second.cgroup_name);
 
                 logger->logInfo("Removing PID " + to_string(global_penalty_list_it->first) + " from global penalty list");
                 global_penalty_list.erase(global_penalty_list_it);
@@ -629,7 +609,7 @@ bool Controller::cleanupPenaltyList() {
         }
     }
 
-	return true;
+    return true;
 }
 
 bool Controller::addPIDToCgroup(string* cgroup_parent_group, long* pid) {
@@ -639,9 +619,7 @@ bool Controller::addPIDToCgroup(string* cgroup_parent_group, long* pid) {
     cgroup << *cgroup_parent_group << CGROUP_PID_PREFIX << to_string(*pid);
     cgroup_procs_file << cgroup.str() << CGROUP_PROCS_FILE;
 
-    if (!fs::exists(cgroup.str())) {
-        createPIDCgroup(cgroup_parent_group, pid);
-	}
+    if (!fs::exists(cgroup.str())) createPIDCgroup(cgroup_parent_group, pid);
 
     return Utils::writeToFile(cgroup_procs_file.str(), to_string(*pid));
 
@@ -652,9 +630,7 @@ bool Controller::addPidToJail(long pid) {
     stringstream jail_cgrp;
     jail_cgrp << JAIL_CGROUP CGROUP_PID_PREFIX << to_string(pid);
 
-    if (!fs::exists(jail_cgrp.str())) {
-        createJailPIDCgroup(jail_cgrp.str());
-    }
+    if (!fs::exists(jail_cgrp.str())) createJailPIDCgroup(jail_cgrp.str());
 
     return Utils::writeToFile(jail_cgrp.str() + CGROUP_PROCS_FILE, to_string(pid));
 
@@ -665,24 +641,22 @@ bool Controller::checkIfCgroupEmpty(string* cgroup_parent_group, long* pid) {
     stringstream proc_file_name;
     proc_file_name << *cgroup_parent_group << CGROUP_PID_PREFIX << to_string(*pid) << CGROUP_CUR_PIDS_FILE;
 
-	fstream proc_file;
+    fstream proc_file;
     proc_file.open(proc_file_name.str(), ios::in);
 
-	if (proc_file.is_open()) {
-		string line;
-		getline(proc_file, line);
-		proc_file.close();
+    if (proc_file.is_open()) {
+        string line;
+        getline(proc_file, line);
+        proc_file.close();
 
-		if (stoi(line) == 0)
-			return true;
-		else
-			return false;
+        if (stoi(line) == 0) return true;
+        else return false;
 
-	} else {
+    } else {
         logger->logError("Unable to read file " + proc_file_name.str());
-		proc_file.close();
-		return false;
-	}
+        proc_file.close();
+        return false;
+    }
 
 }
 
@@ -696,7 +670,7 @@ bool Controller::cleanupCgroups(bool remove_cgroups) {
     // remove all PIDs from created cgroups
     for (auto& dir: fs::directory_iterator(CGROUP_ROOT)) {
         string cgroup_root_dir = dir.path().filename().string();
-        if (is_directory(dir.path()) && regex_match(cgroup_root_dir, regex(REGEX_DAEMON_CGROUP))) {
+        if (is_directory(dir.path()) && regex_match(cgroup_root_dir, regex_daemon_cgroup)) {
             for (auto& sub_dir: fs::directory_iterator(dir)) {
                 if (is_directory(sub_dir.path())) {
                     string cgroup_sub_dir = sub_dir.path().filename().string();
@@ -742,12 +716,12 @@ bool Controller::createPIDCgroup(string* cgroup_parent_group, long* pid) {
 
     if (mkdir(cgroup.str().c_str(), 0755) != -1) {
         logger->logInfo("Created cgroup " + cgroup.str());
-		return true;
-	}
-	else {
+        return true;
+    }
+    else {
         logger->logError("Unable to create cgroup " + cgroup.str());
-		return false;
-	}
+        return false;
+    }
 }
 
 bool Controller::createJailPIDCgroup(string cgroup_name) {
@@ -836,27 +810,27 @@ bool Controller::removePidFromCgroup(long pid) {
 // collect information about the process
 ProcessInfo Controller::collectProcessInfo(Process* process, string cause) {
 
-	ProcessInfo process_info;
+    ProcessInfo process_info;
     process_info._process = *process;
     process_info._cause = cause;
 
     // read /proc/<pid>/status
     process_info._status = readProcFile("status", &process->pid);
 
-	// read /proc/<pid>/io
-	process_info._io = readProcFile("io", &process->pid);
+    // read /proc/<pid>/io
+    process_info._io = readProcFile("io", &process->pid);
 
-	// read /proc/<pid>/limits
-	process_info._limits = readProcFile("limits", &process->pid);
+    // read /proc/<pid>/limits
+    process_info._limits = readProcFile("limits", &process->pid);
 
-	// read /proc/<pid>/syscall
-	process_info._syscall = readProcFile("syscall", &process->pid);
+    // read /proc/<pid>/syscall
+    process_info._syscall = readProcFile("syscall", &process->pid);
 
-	// read /proc/<pid>/cgroup
-	process_info._cgroup = readProcFile("cgroup", &process->pid);
+    // read /proc/<pid>/cgroup
+    process_info._cgroup = readProcFile("cgroup", &process->pid);
 
-	// read /proc/<pid>/loginuid
-	process_info._loginuid = readProcFile("loginuid", &process->pid);
+    // read /proc/<pid>/loginuid
+    process_info._loginuid = readProcFile("loginuid", &process->pid);
 
     // read /proc/<pid>/stack
     process_info._stack = readProcFile("stack", &process->pid);
@@ -864,26 +838,26 @@ ProcessInfo Controller::collectProcessInfo(Process* process, string cause) {
     // read /proc/<pid>/environ
     process_info._environ = readProcFile("environ", &process->pid);
 
-	return process_info;
+    return process_info;
 }
 
 // used to read files from pseudo-filesystem from /proc/<pid>/ - see https://linux.die.net/man/5/proc
 string Controller::readProcFile(string filename, long* pid) {
-	try {
-		string proc_file_content;
+    try {
+        string proc_file_content;
         ifstream proc_file(PROC_DIR "/" + to_string(*pid) + "/" + filename);
-		if ( proc_file.is_open() ) {
-			string line;
-			while(getline(proc_file, line)){
+        if (proc_file.is_open()) {
+            string line;
+            while(getline(proc_file, line)){
                 proc_file_content += line + "\n";
-			}
-		}
-		proc_file.close();
-		return proc_file_content;
-	} catch (...) {
+            }
+        }
+        proc_file.close();
+        return proc_file_content;
+    } catch (...) {
         logger->logError("Unable to read from " PROC_DIR "/" + to_string(*pid) + "/" + filename);
-		return "no data";
-	}
+        return "no data";
+    }
 }
 
 void Controller::SendMessage(ProcessInfo process_info, MessageType mtype) {
@@ -1022,58 +996,54 @@ void Controller::SendMessage(ProcessInfo process_info, MessageType mtype) {
 }
 
 bool Controller::curlPostJSON(const char* json_data, MessageCollector message_collector) {
-	// create a curl handle
-	// libcurl, see: https://curl.se/libcurl/c/curl_easy_init.html
-	curl = curl_easy_init();
+    // create a curl handle
+    // libcurl, see: https://curl.se/libcurl/c/curl_easy_init.html
+    curl = curl_easy_init();
 
     CURLcode curl_result;
 
-	if (curl) {
+    if (curl) {
 
-		// headers with mime-type for the curl posts
-		// libcurl, see: https://curl.se/libcurl/c/curl_slist_append.html
-		struct curl_slist *headers = NULL;
-		headers = curl_slist_append(headers, "Content-Type: application/json");
-		headers = curl_slist_append(headers, "charset: utf-8");
+        // headers with mime-type for the curl posts
+        // libcurl, see: https://curl.se/libcurl/c/curl_slist_append.html
+        struct curl_slist *headers = NULL;
+        headers = curl_slist_append(headers, "Content-Type: application/json");
+        headers = curl_slist_append(headers, "charset: utf-8");
 
-		// set all needed options for the curl post
-		// libcurl, see: https://curl.se/libcurl/c/curl_easy_setopt.html
+        // set all needed options for the curl post
+        // libcurl, see: https://curl.se/libcurl/c/curl_easy_setopt.html
         FILE *devnull = fopen("/dev/null", "w");
-		curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10);
-		curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10);
+        curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 5);
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
         curl_easy_setopt(curl, CURLOPT_POST, 1L);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, devnull);
         curl_easy_setopt (curl, CURLOPT_VERBOSE, 0L);
-        if (message_collector == GRAYLOG)
-            curl_easy_setopt(curl, CURLOPT_URL, graylog_final_url.c_str());
-        if (message_collector == LOGSTASH)
-            curl_easy_setopt(curl, CURLOPT_URL, logstash_final_url.c_str());
-		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_data);
+        if (message_collector == GRAYLOG) curl_easy_setopt(curl, CURLOPT_URL, graylog_final_url.c_str());
+        if (message_collector == LOGSTASH) curl_easy_setopt(curl, CURLOPT_URL, logstash_final_url.c_str());
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_data);
 
-		// send the post and retrieve result
-		// libcurl, see: https://curl.se/libcurl/c/curl_easy_perform.html
-		curl_result = curl_easy_perform(curl);
+        // send the post and retrieve result
+        // libcurl, see: https://curl.se/libcurl/c/curl_easy_perform.html
+        curl_result = curl_easy_perform(curl);
 
         fclose(devnull);
 
-		// check if the post was successful
-		if (curl_result != CURLE_OK) {
-            if (message_collector == GRAYLOG)
-                logger->logError("Unable to perform a POST request to " + graylog_final_url);
-            if (message_collector == LOGSTASH)
-                logger->logError("Unable to perform a POST request to " + logstash_final_url);
+        // check if the post was successful
+        if (curl_result != CURLE_OK) {
+            if (message_collector == GRAYLOG) logger->logError("Unable to perform a POST request to " + graylog_final_url);
+            if (message_collector == LOGSTASH) logger->logError("Unable to perform a POST request to " + logstash_final_url);
             logger->logDebug("libcurl: Unable to post: " + string(curl_easy_strerror(curl_result)));
-			return false;
-		}
+            return false;
+        }
 
-		// cleanup after post
-		// libcurl, see: https://curl.se/libcurl/c/curl_easy_cleanup.html
-		curl_slist_free_all(headers);
-		curl_easy_cleanup(curl);
-	}
+        // cleanup after post
+        // libcurl, see: https://curl.se/libcurl/c/curl_easy_cleanup.html
+        curl_slist_free_all(headers);
+        curl_easy_cleanup(curl);
+    }
 
-	return true;
+    return true;
 }
 
 bool Controller::controllerShutdown() {
@@ -1085,7 +1055,7 @@ bool Controller::controllerShutdown() {
     if (term_cgroup_cleanup) {
         logger->logInfo("Removing created cgroups");
         exit_code = cleanupCgroups(true);
-	}
+    }
 
     return exit_code;
 }
@@ -1096,11 +1066,13 @@ void Controller::showInformation(bool show_rules) {
         // show all available rules
         logger->logInfo("[ Loaded Rules ]");
         logger->logInfo(logger->SEPARATOR_LINE);
+
         if (load_rules) {
             rulemanager->showRules();
         } else {
             logger->logInfo("LOAD_RULES is set to '0'");
         }
+
         logger->logInfo(logger->SEPARATOR_LINE);
     }
 
@@ -1126,7 +1098,7 @@ void Controller::showInformation(bool show_rules) {
     for (auto& r : penalty_list) {
 
         stringstream penalty_list_item;
-		penalty_list_item
+        penalty_list_item
             << "pid: " << to_string(r.second.pid)
             << " penalty_cause: " << r.second.penalty_cause
             << " penalty_counter: " << to_string(r.second.penalty_counter)
@@ -1135,7 +1107,7 @@ void Controller::showInformation(bool show_rules) {
             << " in_cgroup: " << r.second.in_cgroup;
 
         logger->logInfo(penalty_list_item.str());
-	}
+    }
     logger->logInfo(logger->SEPARATOR_LINE);
 
 }

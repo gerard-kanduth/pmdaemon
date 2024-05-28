@@ -11,8 +11,7 @@ Settings::Settings() {
 }
 
 Settings *Settings::getInstance() {
-    if (!settingsinstance)
-        settingsinstance = new Settings();
+    if (!settingsinstance) settingsinstance = new Settings();
     return settingsinstance;
 }
 
@@ -28,20 +27,18 @@ bool Settings::readSettings() {
     settings_file.open(SETTINGS_FILE, ios::in);
     if (!settings_file) {
         logger->logError("Settings file " SETTINGS_FILE " is not present or readable!");
-		return false;
-	}
-	else {
+        return false;
+    }
+    else {
         if (settings_file.is_open()) {
-			string line;
+            string line;
             while(getline(settings_file, line)) {
-                if (available_settings.find(line.substr(0, line.find("="))) != available_settings.end()) {
-                    settings.insert(std::pair<string,string>(line.substr(0, line.find("=")),line.substr(line.find("=")+1)));
-				}
-			}
+                if (available_settings.find(line.substr(0, line.find("="))) != available_settings.end()) settings.insert(std::pair<string,string>(line.substr(0, line.find("=")),line.substr(line.find("=")+1)));
+            }
             settings_file.close();
-		}
-	}
-	return true;
+        }
+    }
+    return true;
 }
 
 bool Settings::getSendNotifications() {
@@ -52,10 +49,8 @@ bool Settings::getSendNotifications() {
 
         int send_notifications = stoi(sn);
         logger->logInfo("Setting SEND_NOTIFICATIONS to \'" + to_string(send_notifications) + "\'");
-        if (send_notifications == 1)
-            return true;
-        else
-            return false;
+        if (send_notifications == 1) return true;
+        else return false;
 
     } catch (...) {
         logger->logError("Invalid SEND_NOTIFICATIONS value in configuration!");
@@ -65,23 +60,21 @@ bool Settings::getSendNotifications() {
 }
 
 bool Settings::getGraylogEnabled() {
-	try {
+    try {
 
         string ge = settings["GRAYLOG_ENABLED"];
         if (!Utils::isZeroOneValue(&ge)) throw 2;
 
         int graylog_enabled = stoi(ge);
         logger->logInfo("Setting GRAYLOG_ENABLE to \'" + to_string(graylog_enabled) + "\'");
-        if (graylog_enabled == 1)
-            return true;
-        else
-            return false;
+        if (graylog_enabled == 1) return true;
+        else return false;
 
-	} catch (...) {
+    } catch (...) {
         logger->logError("Invalid GRAYLOG_ENABLED value in configuration!");
         logger->logDebug("Allowed Values: [ '1' (ON), '0' (OFF) ]");
         exit(EXIT_FAILURE);
-	}
+    }
 }
 
 bool Settings::getLogstashEnabled() {
@@ -92,10 +85,8 @@ bool Settings::getLogstashEnabled() {
 
         int logstash_enabled = stoi(le);
         logger->logInfo("Setting LOGSTASH_ENABLE to \'" + to_string(logstash_enabled) + "\'");
-        if (logstash_enabled == 1)
-            return true;
-        else
-            return false;
+        if (logstash_enabled == 1) return true;
+        else return false;
 
     } catch (...) {
         logger->logError("Invalid LOGSTASH_ENABLE value in configuration!");
@@ -105,23 +96,21 @@ bool Settings::getLogstashEnabled() {
 }
 
 bool Settings::getGraylogHTTPSecure() {
-	try {
+    try {
 
         string ghs = settings["GRAYLOG_HTTP_SECURE"];
         if (!Utils::isZeroOneValue(&ghs)) throw 2;
 
         int graylog_http_secure = stoi(ghs);
         logger->logInfo("Setting GRAYLOG_HTTP_SECURE to \'" + to_string(graylog_http_secure) + "\'");
-        if (graylog_http_secure == 1)
-            return true;
-        else
-            return false;
+        if (graylog_http_secure == 1) return true;
+        else return false;
 
-	} catch (...) {
+    } catch (...) {
         logger->logError("Invalid GRAYLOG_HTTP_SECURE value in configuration!");
         logger->logDebug("Allowed Values: [ '1' (ON), '0' (OFF) ]");
         exit(EXIT_FAILURE);
-	}
+    }
 }
 
 bool Settings::getLogstashHTTPSecure() {
@@ -132,10 +121,8 @@ bool Settings::getLogstashHTTPSecure() {
 
         int logstash_http_secure = stoi(lhs);
         logger->logInfo("Setting LOGSTASH_HTTP_SECURE to \'" + to_string(logstash_http_secure) + "\'");
-        if (logstash_http_secure == 1)
-            return true;
-        else
-            return false;
+        if (logstash_http_secure == 1) return true;
+        else return false;
 
     } catch (...) {
         logger->logError("Invalid LOGSTASH_HTTP_SECURE value in configuration!");
@@ -145,82 +132,74 @@ bool Settings::getLogstashHTTPSecure() {
 }
 
 bool Settings::getStateTrigger() {
-	try {
+    try {
 
         string st = settings["STATE_TRIGGER"];
         if (!Utils::isZeroOneValue(&st)) throw 2;
 
         int state_trigger = stoi(st);
         logger->logInfo("Setting STATE_TRIGGER to \'" + to_string(state_trigger) + "\'");
-        if (state_trigger == 1)
-            return true;
-        else
-            return false;
+        if (state_trigger == 1) return true;
+        else return false;
 
-	} catch (...) {
+    } catch (...) {
         logger->logError("Invalid STATE_TRIGGER value in configuration!");
         logger->logDebug("Allowed Values: [ '1' (ON), '0' (OFF) ]");
         exit(EXIT_FAILURE);
-	}
+    }
 }
 
 bool Settings::getLoadRules() {
-	try {
+    try {
 
         string lr = settings["LOAD_RULES"];
         if (!Utils::isZeroOneValue(&lr)) throw 2;
 
         int load_rules = stoi(lr);
         logger->logInfo("Setting LOAD_RULES to \'" + to_string(load_rules) + "\'");
-        if (load_rules == 1)
-            return true;
-        else
-            return false;
+        if (load_rules == 1) return true;
+        else return false;
 
-	} catch (...) {
+    } catch (...) {
         logger->logError("Invalid LOAD_RULES value in configuration!");
         logger->logDebug("Allowed Values: [ '1' (ON), '0' (OFF) ]");
         exit(EXIT_FAILURE);
-	}
+    }
 }
 
 bool Settings::getSpecificRulesCheckOnly() {
-	try {
+    try {
         string srco = settings["SPECIFIC_RULES_CHECK_ONLY"];
         if (!Utils::isZeroOneValue(&srco)) throw 2;
 
         int specific_rules_check_only = stoi(srco);
         logger->logInfo("Setting SPECIFIC_RULES_CHECK_ONLY to \'" + to_string(specific_rules_check_only) + "\'");
-        if (specific_rules_check_only == 1)
-            return true;
-        else
-            return false;
+        if (specific_rules_check_only == 1) return true;
+        else return false;
 
-	} catch (...) {
+    } catch (...) {
         logger->logError("Invalid SPECIFIC_RULES_CHECK_ONLY value in configuration!");
         logger->logDebug("Allowed Values: [ '1' (ON), '0' (OFF) ]");
         exit(EXIT_FAILURE);
-	}
+    }
 }
 
 bool Settings::getTermCgroupCleanup() {
-	try {
+    try {
 
         string tcc = settings["TERM_CGROUP_CLEANUP"];
         if (!Utils::isZeroOneValue(&tcc)) throw 2;
 
         int term_cgroup_cleanup = stoi(tcc);
         logger->logInfo("Setting TERM_CGROUP_CLEANUP to \'" + to_string(term_cgroup_cleanup) + "\'");
-        if (term_cgroup_cleanup == 1)
-            return true;
-        else
-            return false;
+        if (term_cgroup_cleanup == 1) return true;
+        else return false;
 
-	} catch (...) {
+    } catch (...) {
         logger->logError("Invalid TERM_CGROUP_CLEANUP value in configuration!");
         logger->logDebug("Allowed Values: [ '1' (ON), '0' (OFF) ]");
         exit(EXIT_FAILURE);
-	}
+    }
 }
 
 bool Settings::getGlobalActionEnabled() {
@@ -231,10 +210,8 @@ bool Settings::getGlobalActionEnabled() {
 
         int global_action_enabled = stoi(gae);
         logger->logInfo("Setting GLOBAL_ACTION_ENABLED to \'" + to_string(global_action_enabled) + "\'");
-        if (global_action_enabled == 1)
-            return true;
-        else
-            return false;
+        if (global_action_enabled == 1) return true;
+        else return false;
 
     } catch (...) {
         logger->logError("Invalid GLOBAL_ACTION_ENABLED value in configuration!");
@@ -252,11 +229,8 @@ set<string> Settings::getWhitelistedUsers() {
         set<string> whitelisted_users;
         whitelisted_users = Utils::generateStringSet(wuser_string);
 
-
-        if (!whitelisted_users.empty())
-            logger->logInfo("Setting WHITELISTED_USERS to \'" + Utils::setToComSepString(whitelisted_users) + "\'");
-        else
-            logger->logInfo("Setting WHITELISTED_USERS to \'\'");
+        if (!whitelisted_users.empty()) logger->logInfo("Setting WHITELISTED_USERS to \'" + Utils::setToComSepString(whitelisted_users) + "\'");
+        else logger->logInfo("Setting WHITELISTED_USERS to \'\'");
         return whitelisted_users;
 
     } catch (...) {
@@ -267,7 +241,7 @@ set<string> Settings::getWhitelistedUsers() {
 }
 
 double Settings::getCpuTriggerThreshold() {
-	try {
+    try {
 
         string ctt = settings["CPU_TRIGGER_THRESHOLD"];
         if (!Utils::isPercentValue(&ctt) && !Utils::isDisableValue(&ctt)) throw 2;
@@ -289,11 +263,11 @@ double Settings::getCpuTriggerThreshold() {
             return 0;
         }
 
-	} catch (...) {
+    } catch (...) {
         logger->logError("Invalid CPU_TRIGGER_THRESHOLD value in configuration!");
         logger->logDebug("Allowed Values: [ '0%' - '100%', '0.0%' - '100.0%', '0' (disable CPU check) ]");
         exit(EXIT_FAILURE);
-	}
+    }
 }
 
 double Settings::getJailCPULimit() {
@@ -399,7 +373,7 @@ long long Settings::getJailMEMLimit() {
 }
 
 int Settings::getGraylogPort() {
-	try {
+    try {
 
         string gp = settings["GRAYLOG_PORT"];
         if (!Utils::isIntegerValue(&gp)) throw 2;
@@ -407,16 +381,15 @@ int Settings::getGraylogPort() {
         int graylog_port = stoi(gp);
         if (graylog_port > 0) {
             logger->logInfo("Setting GRAYLOG_PORT to \'" + to_string(graylog_port) + "\'");
-			return graylog_port;
-		}
-		else
-			throw 2;
+            return graylog_port;
+        }
+        else throw 2;
 
-	} catch (...) {
+    } catch (...) {
         logger->logError("Invalid GRAYLOG_PORT value in configuration!");
         logger->logDebug("Allowed Values: [ '1' - '1E+32' ]");
         exit(EXIT_FAILURE);
-	}
+    }
 }
 
 int Settings::getLogstashPort() {
@@ -430,8 +403,7 @@ int Settings::getLogstashPort() {
             logger->logInfo("Setting LOGSTASH_PORT to \'" + to_string(logstash_port) + "\'");
             return logstash_port;
         }
-        else
-            throw 2;
+        else throw 2;
 
     } catch (...) {
         logger->logError("Invalid LOGSTASH_PORT value in configuration!");
@@ -441,7 +413,7 @@ int Settings::getLogstashPort() {
 }
 
 int Settings::getCheckInterval() {
-	try {
+    try {
 
         string ci = settings["CHECK_INTERVAL"];
         if (!Utils::isIntegerValue(&ci)) throw 2;
@@ -449,20 +421,19 @@ int Settings::getCheckInterval() {
         int check_interval = stoi(ci);
         if (check_interval > 0) {
             logger->logInfo("Setting CHECK_INTERVAL to \'" + to_string(check_interval) + "\'");
-			return check_interval;
-		}
-		else
-			throw 2;
+            return check_interval;
+        }
+        else throw 2;
 
-	} catch (...) {
+    } catch (...) {
         logger->logError("Invalid CHECK_INTERVAL value in configuration!");
         logger->logDebug("Allowed Values: [ '1' - '1E+32' ]");
         exit(EXIT_FAILURE);
-	}
+    }
 }
 
 int Settings::getChecksBeforeAlert() {
-	try {
+    try {
 
         string cba = settings["CHECKS_BEFORE_ALERT"];
         if (!Utils::isIntegerValue(&cba)) throw 2;
@@ -470,20 +441,19 @@ int Settings::getChecksBeforeAlert() {
         int checks_before_alert = stoi(cba);
         if (checks_before_alert > 0) {
             logger->logInfo("Setting CHECKS_BEFORE_ALERT to \'" + to_string(checks_before_alert) + "\'");
-			return checks_before_alert;
-		}
-		else
-			throw 2;
+            return checks_before_alert;
+        }
+        else throw 2;
 
-	} catch (...) {
+    } catch (...) {
         logger->logError("Invalid CHECKS_BEFORE_ALERT value in configuration!");
         logger->logDebug("Allowed Values: [ '1' - '1E+32' ]");
         exit(EXIT_FAILURE);
-	}
+    }
 }
 
 int Settings::getChecksCooldown() {
-	try {
+    try {
 
         string cc = settings["CHECKS_COOLDOWN"];
         if (!Utils::isIntegerValue(&cc)) throw 2;
@@ -491,20 +461,19 @@ int Settings::getChecksCooldown() {
         int checks_cooldown = stoi(cc);
         if (checks_cooldown > 0) {
             logger->logInfo("Setting CHECKS_COOLDOWN to \'" + to_string(checks_cooldown) + "\'");
-			return checks_cooldown;
-		}
-		else
-			throw 2;
+            return checks_cooldown;
+        }
+        else throw 2;
 
-	} catch (...) {
+    } catch (...) {
         logger->logError("Invalid CHECKS_COOLDOWN value in configuration!");
         logger->logDebug("Allowed Values: [ '1' - '1E+32' ]");
         exit(EXIT_FAILURE);
-	}
+    }
 }
 
 int Settings::getMaxErrors() {
-	try {
+    try {
 
         string me = settings["MAX_ERRORS"];
         if (!Utils::isIntegerValue(&me)) throw 2;
@@ -512,16 +481,15 @@ int Settings::getMaxErrors() {
         int max_errors = stoi(me);
         if (max_errors >= 0) {
             logger->logInfo("Setting MAX_ERRORS to \'" + to_string(max_errors) + "\'");
-			return max_errors;
-		}
-		else
-			throw 2;
+            return max_errors;
+        }
+        else throw 2;
 
-	} catch (...) {
+    } catch (...) {
         logger->logError("Invalid MAX_ERRORS value in configuration!");
         logger->logDebug("Allowed Values: [ '1' - '1E+32' ]");
         exit(EXIT_FAILURE);
-	}
+    }
 }
 
 int Settings::getMaxAlertGlobalAction() {
@@ -535,8 +503,7 @@ int Settings::getMaxAlertGlobalAction() {
             logger->logInfo("Setting MAX_ALERTS_GLOBAL_ACTION to \'" + to_string(max_alert_global_action) + "\'");
             return max_alert_global_action;
         }
-        else
-            throw 2;
+        else throw 2;
 
     } catch (...) {
         logger->logError("Invalid MAX_ALERTS_GLOBAL_ACTION value in configuration!");
@@ -555,8 +522,7 @@ int Settings::getDebugLevel() {
         if (debug_level > 0 && debug_level <= 2) {
             return debug_level;
         }
-        else
-            throw 2;
+        else throw 2;
 
     } catch (...) {
         logger->logError("Invalid DEBUG_LEVEL value in configuration!");
@@ -566,22 +532,22 @@ int Settings::getDebugLevel() {
 }
 
 string Settings::getGraylogFQDN() {
-	try {
+    try {
 
         string graylog_fqdn = settings["GRAYLOG_FQDN"];
         if (!Utils::isFQDNValue(&graylog_fqdn)) throw 2;
 
-		transform(graylog_fqdn.begin(), graylog_fqdn.end(), graylog_fqdn.begin(), ::tolower);
+        transform(graylog_fqdn.begin(), graylog_fqdn.end(), graylog_fqdn.begin(), ::tolower);
         graylog_fqdn.erase(std::remove_if(graylog_fqdn.begin(), graylog_fqdn.end(), ::isspace), graylog_fqdn.end());
 
         logger->logInfo("Setting GRAYLOG_FQDN to \'" + graylog_fqdn + "\'");
         return graylog_fqdn;
 
-	} catch (...) {
+    } catch (...) {
         logger->logError("Invalid GRAYLOG_FQDN value in configuration!");
         logger->logDebug("Allowed Values: [ a-z, A-Z, 0-9, '-', '.' ]");
         exit(EXIT_FAILURE);
-	}
+    }
 }
 
 string Settings::getLogstashFQDN() {
@@ -604,22 +570,21 @@ string Settings::getLogstashFQDN() {
 }
 
 string Settings::getGraylogHTTPPath() {
-	try {
+    try {
 
         string graylog_http_path = settings["GRAYLOG_HTTP_PATH"];
-		transform(graylog_http_path.begin(), graylog_http_path.end(), graylog_http_path.begin(), ::tolower);
+        transform(graylog_http_path.begin(), graylog_http_path.end(), graylog_http_path.begin(), ::tolower);
         if (!graylog_http_path.empty() && graylog_http_path.find('/') != std::string::npos) {
             logger->logInfo("Setting GRAYLOG_HTTP_PATH to \'" + graylog_http_path + "\'");
-			return graylog_http_path;
-		}
-		else
-			throw 2;
+            return graylog_http_path;
+        }
+        else throw 2;
 
-	} catch (...) {
+    } catch (...) {
         logger->logError("Invalid GRAYLOG_HTTP_PATH value in configuration!");
         logger->logDebug("Path must start with '/'. Allowed Values: [ a-z, A-Z, 0-9, '-', '.' ]");
         exit(EXIT_FAILURE);
-	}
+    }
 }
 
 string Settings::getLogstashHTTPPath() {
@@ -631,8 +596,7 @@ string Settings::getLogstashHTTPPath() {
             logger->logInfo("Setting LOGSTASH_HTTP_PATH to \'" + logstash_http_path + "\'");
             return logstash_http_path;
         }
-        else
-            throw 2;
+        else throw 2;
 
     } catch (...) {
         logger->logError("Invalid LOGSTASH_HTTP_PATH value in configuration!");
@@ -642,31 +606,26 @@ string Settings::getLogstashHTTPPath() {
 }
 
 TransportType Settings::getGraylogTransportMethod() {
-	try {
+    try {
 
         TransportType tt;
         string graylog_transport_method = settings["GRAYLOG_TRANSFER_METHOD"];
-		transform(graylog_transport_method.begin(), graylog_transport_method.end(), graylog_transport_method.begin(), ::tolower);
+        transform(graylog_transport_method.begin(), graylog_transport_method.end(), graylog_transport_method.begin(), ::tolower);
         graylog_transport_method.erase(std::remove_if(graylog_transport_method.begin(), graylog_transport_method.end(), ::isspace), graylog_transport_method.end());
 
-
-        if (graylog_transport_method == "http")
-            tt = HTTP;
-        else if (graylog_transport_method == "udp")
-            tt = UDP;
-        else if (graylog_transport_method == "tcp")
-            tt = TCP;
-        else
-            throw 2;
+        if (graylog_transport_method == "http") tt = HTTP;
+        else if (graylog_transport_method == "udp") tt = UDP;
+        else if (graylog_transport_method == "tcp") tt = TCP;
+        else throw 2;
 
         logger->logInfo("Setting GRAYLOG_TRANSFER_METHOD to \'" + graylog_transport_method + "\'");
         return tt;
 
-	} catch (...) {
+    } catch (...) {
         logger->logError("Invalid GRAYLOG_TRANSFER_METHOD value in configuration!");
         logger->logDebug("Allowed Values: [ 'http', 'tcp', 'udp' ]");
         exit(EXIT_FAILURE);
-	}
+    }
 }
 
 TransportType Settings::getLogstashTransportMethod() {
@@ -677,14 +636,10 @@ TransportType Settings::getLogstashTransportMethod() {
         transform(logstash_transport_method.begin(), logstash_transport_method.end(), logstash_transport_method.begin(), ::tolower);
         logstash_transport_method.erase(std::remove_if(logstash_transport_method.begin(), logstash_transport_method.end(), ::isspace), logstash_transport_method.end());
 
-        if (logstash_transport_method == "http")
-            tt = HTTP;
-        else if (logstash_transport_method == "udp")
-            tt = UDP;
-        else if (logstash_transport_method == "tcp")
-            tt = TCP;
-        else
-            throw 2;
+        if (logstash_transport_method == "http") tt = HTTP;
+        else if (logstash_transport_method == "udp") tt = UDP;
+        else if (logstash_transport_method == "tcp") tt = TCP;
+        else throw 2;
 
         logger->logInfo("Setting LOGSTASH_TRANSFER_METHOD to \'" + logstash_transport_method + "\'");
         return tt;
@@ -704,14 +659,10 @@ GlobalAction Settings::getGlobalAction() {
         transform(global_action.begin(), global_action.end(), global_action.begin(), ::tolower);
         global_action.erase(std::remove_if(global_action.begin(), global_action.end(), ::isspace), global_action.end());
 
-        if (global_action == "kill")
-            ga = ACTION_KILL;
-        else if (global_action == "freeze")
-            ga = ACTION_FREEZE;
-        else if (global_action == "jail")
-            ga = ACTION_JAIL;
-        else
-            throw 2;
+        if (global_action == "kill") ga = ACTION_KILL;
+        else if (global_action == "freeze") ga = ACTION_FREEZE;
+        else if (global_action == "jail") ga = ACTION_JAIL;
+        else throw 2;
 
         logger->logInfo("Setting GLOBAL_ACTION to \'" + global_action + "\'");
         return ga;
@@ -724,41 +675,35 @@ GlobalAction Settings::getGlobalAction() {
 }
 
 string Settings::getLogLevel() {
-	try {
+    try {
 
         string log_level = settings["LOGLEVEL"];
-		transform(log_level.begin(), log_level.end(), log_level.begin(), ::tolower);
+        transform(log_level.begin(), log_level.end(), log_level.begin(), ::tolower);
 
-        if (log_level == "info" || log_level == "notice" || log_level == "debug" || log_level == "error") {
-				return log_level;
-        }
-		else
-			throw 2;
+        if (log_level == "info" || log_level == "notice" || log_level == "debug" || log_level == "error") return log_level;
+        else throw 2;
 
-	} catch (...) {
+    } catch (...) {
         logger->logError("Invalid LOGLEVEL value in configuration!");
         logger->logDebug("Allowed Values: [ 'info', 'notice', 'error', 'debug' ]");
         exit(EXIT_FAILURE);
-	}
+    }
 }
 
 string Settings::getRulesDir() {
-	try {
+    try {
 
-        if (settings["RULES_DIRECTORY"].empty())
-			return "/etc/pmdaemon/rules.d";
-		else
-            return settings["RULES_DIRECTORY"];
+        if (settings["RULES_DIRECTORY"].empty()) return "/etc/pmdaemon/rules.d";
+        else return settings["RULES_DIRECTORY"];
 
-	} catch (...) {
+    } catch (...) {
         logger->logError("Invalid RULES_DIRECTORY value in configuration!");
         logger->logDebug("Path must start with '/'. Allowed Values: [ a-z, A-Z, 0-9, '-', '.' ]");
         exit(EXIT_FAILURE);
-	}
+    }
 }
 
 // for debug purpose only
 void Settings::showSettings() {
-    for (auto s : settings)
-		std::cout << s.first << "\t-> " << s.second << '\n';	
+    for (auto s : settings) std::cout << s.first << "\t-> " << s.second << '\n';
 }

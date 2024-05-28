@@ -4,6 +4,7 @@
 #include <cctype>
 #include <string>
 #include <stdlib.h>
+#include <regex>
 
 #define DAEMON_NAME                 "pmdaemon"
 
@@ -27,17 +28,19 @@
 #define JAIL_CGROUP_CPU_MAX_FILE    JAIL_CGROUP CGROUP_CPU_MAX_FILE
 #define JAIL_CGROUP_MEM_MAX_FILE    JAIL_CGROUP CGROUP_MEM_MAX_FILE
 
-#define REGEX_PID_VALUE             "^[0-9]{1,}$"
-#define REGEX_DISABLE_VALUE         "^\\s{0,}0{1,1}\\s{0,}$"
-#define REGEX_PERCENT_VALUE         "^\\s{0,}\\d{1,3}(\\.\\d{0,3}){0,1}\\s{0,}\\%{1,1}\\s{0,}$"
-#define REGEX_INT_VALUE             "^\\s{0,}\\d{1,32}\\s{0,}$"
-#define REGEX_ZERO_ONE_VALUE        "^\\s{0,}1|0\\s{0,}$"
-#define REGEX_COMMA_SEP_STRINGS     "^(\\s{0,}[a-zA-Z0-9\\_\\.][a-zA-Z0-9\\_\\.\\-]{0,30}[a-zA-Z0-9\\_\\.\\$\\-]?\\s{0,}\\,{0,}){0,}$"
-#define REGEX_FQDN_VALUE            "^\\s{0,}(\\w|\\d|\\.|\\-){1,}\\s{0,}$"
-#define REGEX_ABS_MEM_VALUE         "^\\s{0,}\\d{1,32}\\s{0,}[B|K|M|G|T|P]{1,1}\\s{0,}$"
-#define REGEX_DAEMON_CGROUP         "^" DAEMON_NAME "\\-.*$"
-
 using namespace std;
+
+static regex regex_pid_value("^[0-9]{1,}$");
+static regex regex_disable_value("^\\s{0,}0{1,1}\\s{0,}$");
+static regex regex_percent_value("^\\s{0,}\\d{1,3}(\\.\\d{0,3}){0,1}\\s{0,}\\%{1,1}\\s{0,}$");
+static regex regex_int_value("^\\s{0,}\\d{1,32}\\s{0,}$");
+static regex regex_zero_one_value("^\\s{0,}1|0\\s{0,}$");
+static regex regex_comma_sep_strings("^(\\s{0,}[a-zA-Z0-9\\_\\.][a-zA-Z0-9\\_\\.\\-]{0,30}[a-zA-Z0-9\\_\\.\\$\\-]?\\s{0,}\\,{0,}){0,}$");
+static regex regex_fqdn_value("^\\s{0,}(\\w|\\d|\\.|\\-){1,}\\s{0,}$");
+static regex regex_abs_mem_value("^\\s{0,}\\d{1,32}\\s{0,}[B|K|M|G|T|P]{1,1}\\s{0,}$", regex_constants::icase);
+static regex regex_daemon_cgroup("^" DAEMON_NAME "\\-.*$");
+static std::regex regex_cpu_stat("^cpu[0-9]{1,}\\s.*$");
+static std::regex regex_rule_file("^.*.conf$||.*.rule$");
 
 enum MessageCollector {
     GRAYLOG,

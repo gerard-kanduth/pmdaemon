@@ -21,57 +21,57 @@ using namespace std;
 
 class RuleManager {
 
-	private:
+    private:
 
-        	// Logger Instance
-        	Logger* logger = nullptr;
+        // Logger Instance
+        Logger* logger = nullptr;
 
-        	struct RuleReturn {
-        	    bool success;
-        	    unordered_map<string, string> rule;
-        	};
+        struct RuleReturn {
+            bool success;
+            unordered_map<string, string> rule;
+        };
 
-        	const set<string> mandatory_rule_settings {
-        	    "RULE_NAME"
-        	};
+        const set<string> mandatory_rule_settings {
+            "RULE_NAME"
+        };
 
-        	const set<string> available_rule_settings {
-        	    "RULE_NAME",
-        	    "COMMAND",
-        	    "REGEX_SEARCH_ENABLED",
-        	    "REGEX_SEARCH_PATTERN",
-        	    "NO_CHECK",
-        	    "FREEZE",
-        	    "OOM_KILL_ENABLED",
-        	    "PID_KILL_ENABLED",
-        	    "SEND_NOTIFICATIONS",
-        	    "CPU_TRIGGER_THRESHOLD",
-        	    "MEM_TRIGGER_THRESHOLD",
-        	    "ENABLE_LIMITING",
-        	    "LIMIT_CPU_PERCENT",
-        	    "LIMIT_MEMORY_VALUE",
-        	    "INCLUDE_BINARY_FOLDER_CHECK",
-        	    "WILDCARD_MATCH",
-        	    "CHECKS_BEFORE_ALERT"
-        	};
+        const set<string> available_rule_settings {
+            "RULE_NAME",
+            "COMMAND",
+            "REGEX_SEARCH_ENABLED",
+            "REGEX_SEARCH_PATTERN",
+            "NO_CHECK",
+            "FREEZE",
+            "OOM_KILL_ENABLED",
+            "PID_KILL_ENABLED",
+            "SEND_NOTIFICATIONS",
+            "CPU_TRIGGER_THRESHOLD",
+            "MEM_TRIGGER_THRESHOLD",
+            "ENABLE_LIMITING",
+            "LIMIT_CPU_PERCENT",
+            "LIMIT_MEMORY_VALUE",
+            "INCLUDE_BINARY_FOLDER_CHECK",
+            "WILDCARD_MATCH",
+            "CHECKS_BEFORE_ALERT"
+        };
 
-        	const char* rules_directory = nullptr;
+        const char* rules_directory = nullptr;
 
-        	unordered_map<string, Rule> rules;
+        unordered_map<string, Rule> rules;
 
-        	bool createCgroup(Rule*);
-        	bool checkIfRuleIsValid(unordered_map<string, string>);
-        	bool generateRuleFromFile(string);
-        	bool registerRule(unordered_map<string, string>);
-        	void loadRules();
-        	void showRuleContent(Rule);
-        	RuleReturn readRuleFile(string);
+        bool createCgroup(Rule*);
+        bool checkIfRuleIsValid(unordered_map<string, string>);
+        bool generateRuleFromFile(string);
+        bool registerRule(unordered_map<string, string>);
+        void loadRules();
+        void showRuleContent(Rule);
+        RuleReturn readRuleFile(string);
 
-	public:
+    public:
 
-        	RuleManager(string);
-        	Rule* loadIfRuleExists(string);
-        	void showRules();
+        RuleManager(string);
+        Rule* loadIfRuleExists(string);
+        void showRules();
 
 };
 

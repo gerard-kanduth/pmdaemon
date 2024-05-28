@@ -28,34 +28,34 @@ int check_interval;
 // signal handler (needed to remove all created cgroups and for debug purpose)
 void signalHandler(int signal) {
 
-	switch(signal)  {
+    switch(signal)  {
 
-		// SIGTERM signal
-		case 15:
+        // SIGTERM signal
+        case 15:
            running = false;
-			break;
+            break;
 
-		// SIGABRT signal
-		case 6:
+        // SIGABRT signal
+        case 6:
            running = false;
-			break;
+            break;
 
-		// SIGUSR1 signal
-		case 10:
+        // SIGUSR1 signal
+        case 10:
             controller->cleanupCgroups(false);
-			break;
+            break;
 
-		// SIGUSR2 signal
-		case 12:
+        // SIGUSR2 signal
+        case 12:
             controller->showInformation(true);
-			break;
+            break;
 
-		// unknown signals
-		default:
+        // unknown signals
+        default:
             cerr << DAEMON_NAME << " received unknown signal (" << to_string(signal) << ")!";
-			break;
+            break;
 
-	}
+    }
 
 }
 
@@ -68,39 +68,38 @@ int main() {
     signal(SIGUSR1, signalHandler);
     signal(SIGUSR2, signalHandler);
 
-	// initialize a singleton instance for the logger
+    // initialize a singleton instance for the logger
     logger = Logger::getInstance();
 
-	// load the configuration file
+    // load the configuration file
     settings = Settings::getInstance();
 
-	// terminate if configuration is broken or not available
-	if (!settings->configAvailable()){
+    // terminate if configuration is broken or not available
+    if (!settings->configAvailable()){
         logger->logError("Unable to load configuration! Stopping!");
-		return 1;
-	}
+        return 1;
+    }
 
-	// set the loglevel for the Logger
+    // set the loglevel for the Logger
     logger->setLogLevel(settings->getLogLevel(), settings->getDebugLevel());
 
-	// set settings defined in settings-file
-	check_interval = settings->getCheckInterval();
+    // set settings defined in settings-file
+    check_interval = settings->getCheckInterval();
 
-	// initializing the controller
+    // initializing the controller
     controller = new Controller();
 
-	/* --- start check routine --- */
+    /* --- start check routine --- */
     logger->logNotice("Starting " DAEMON_NAME " monitoring");
     while(running) {
 
         // run a check-cycle (exit if too many faulty checks)
-        if (controller->doCheck() == false)
-            return 1;
+        if (controller->doCheck() == false) return 1;
 
         // wait before next check
         sleep(check_interval);
     }
-	/* --- end check routine --- */
+    /* --- end check routine --- */
 
     if (controller->controllerShutdown()) return 0;
     else return 1;

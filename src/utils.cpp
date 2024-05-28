@@ -4,77 +4,68 @@ long Utils::total_ram = Utils::getTotalMemory();
 
 bool Utils::checkIfFileExists(string filename) {
 
-	return ( access( filename.c_str(), F_OK ) != -1 );
+    return (access(filename.c_str(), F_OK) != -1);
 
 }
 
 bool Utils::checkIfDirectoryExists(string directory) {
 
-	return fs::exists(directory.c_str());
+    return fs::exists(directory.c_str());
 
 }
 
 bool Utils::isZeroOneValue(string* input) {
 
-    if (regex_match(*input, regex(REGEX_ZERO_ONE_VALUE)))
-        return true;
+    if (regex_match(*input, regex_zero_one_value)) return true;
     return false;
 
 }
 
 bool Utils::isPercentValue(string* input) {
 
-    if (regex_match(*input, regex(REGEX_PERCENT_VALUE)))
-        return true;
+    if (regex_match(*input, regex_percent_value)) return true;
     return false;
 
 }
 
 bool Utils::isIntegerValue(string* input) {
 
-    if (regex_match(*input, regex(REGEX_INT_VALUE)))
-        return true;
+    if (regex_match(*input, regex_int_value)) return true;
     return false;
 
 }
 
 bool Utils::isCommaSepStringValue(string* input) {
 
-    if (regex_match(*input, regex(REGEX_COMMA_SEP_STRINGS)))
-        return true;
+    if (regex_match(*input, regex_comma_sep_strings)) return true;
     return false;
 
 }
 
 bool Utils::isFQDNValue(string* input) {
 
-    if (regex_match(*input, regex(REGEX_FQDN_VALUE)))
-        return true;
+    if (regex_match(*input, regex_fqdn_value)) return true;
     return false;
 
 }
 
 bool Utils::isMemValue(string* input) {
 
-    if (regex_match(*input, regex(REGEX_ABS_MEM_VALUE,  regex_constants::icase))
-            || regex_match(*input, regex(REGEX_PERCENT_VALUE)))
-        return true;
+    if (regex_match(*input, regex_abs_mem_value) || regex_match(*input, regex_percent_value)) return true;
     return false;
 
 }
 
 bool Utils::isDisableValue(string* input) {
 
-    if (regex_match(*input, regex(REGEX_DISABLE_VALUE)))
-        return true;
+    if (regex_match(*input, regex_disable_value)) return true;
     return false;
 
 }
 
 bool Utils::isAbsoluteMemValue(string* input) {
 
-    if (regex_match(*input, regex(REGEX_ABS_MEM_VALUE,  regex_constants::icase)))
-        return true;
+    if (regex_match(*input, regex_abs_mem_value)) return true;
     return false;
 
 }
@@ -83,18 +74,17 @@ bool Utils::writeToFile(string filename, string text) {
 
     FILE* file = nullptr;
 
-	file = fopen(filename.c_str(), "w");
+    file = fopen(filename.c_str(), "w");
 
     if (file) {
         fputs(text.c_str(), file);
-    }
-	else {
+    } else {
         Logger::getInstance()->logError("Unable to write to file " + filename + "!");
-		return false;
-	}
+        return false;
+    }
 
-	fclose(file);
-	return true;
+    fclose(file);
+    return true;
 
 }
 
@@ -107,11 +97,10 @@ int Utils::getActiveCoresCount(string *stat_output) {
         string line;
         istringstream output_stream(*stat_output);
         while (getline(output_stream, line)) {
-            if (regex_match(line, regex("^cpu[0-9]{1,}\\s.*$")))
-                active_cores++;
+            if (regex_match(line, regex_cpu_stat)) active_cores++;
         }
 
-    }  catch (...) {
+    } catch (...) {
         Logger::getInstance()->logError("Unable to get active cores. Using default: 1 core.");
         active_cores = 1;
         return active_cores;
@@ -141,16 +130,11 @@ long Utils::getTotalMemory() {
     string u = lowerText(unit);
 
     // convert total memory to byte since the daemon will always compare in bytes
-    if (u.find("kb") != string::npos)
-        total_memory = total_memory * 1024;
-    else if (u.find("mb") != string::npos)
-        total_memory = total_memory * 1024 * 1024;
-    if (u.find("gb") != string::npos)
-        total_memory = total_memory * 1024 * 1024 * 1024;
-    else if (u.find("tb") != string::npos)
-        total_memory = total_memory * 1024 * 1024 * 1024 * 1024;
-    else if (u.find("pb") != string::npos)
-        total_memory = total_memory * 1024 * 1024 * 1024 * 1024 * 1024;
+    if (u.find("kb") != string::npos) total_memory = total_memory * 1024;
+    else if (u.find("mb") != string::npos) total_memory = total_memory * 1024 * 1024;
+    else if (u.find("gb") != string::npos) total_memory = total_memory * 1024 * 1024 * 1024;
+    else if (u.find("tb") != string::npos) total_memory = total_memory * 1024 * 1024 * 1024 * 1024;
+    else if (u.find("pb") != string::npos) total_memory = total_memory * 1024 * 1024 * 1024 * 1024 * 1024;
 
     return total_memory;
 }
@@ -161,16 +145,11 @@ long long Utils::convertToBytes(string unit, string value) {
     long long v = strtoul(value.c_str(), nullptr, 10);
 
     // convert total memory to byte
-    if (u.find("k") != string::npos)
-        v = v * 1024;
-    else if (u.find("m") != string::npos)
-        v = v * 1024 * 1024;
-    if (u.find("g") != string::npos)
-        v = v * 1024 * 1024 * 1024;
-    else if (u.find("t") != string::npos)
-        v = v * 1024 * 1024 * 1024 * 1024;
-    else if (u.find("p") != string::npos)
-        v = v * 1024 * 1024 * 1024 * 1024 * 1024;
+    if (u.find("k") != string::npos) v = v * 1024;
+    else if (u.find("m") != string::npos) v = v * 1024 * 1024;
+    else if (u.find("g") != string::npos) v = v * 1024 * 1024 * 1024;
+    else if (u.find("t") != string::npos) v = v * 1024 * 1024 * 1024 * 1024;
+    else if (u.find("p") != string::npos) v = v * 1024 * 1024 * 1024 * 1024 * 1024;
 
     return v;
 
@@ -181,17 +160,17 @@ double Utils::calcPercentCPU(unsigned long long *sys_delta_total_time, unsigned 
 }
 
 string Utils::lowerText(char* txt) {
+
     string t(txt);
+
     return Utils::lowerText(t);
 }
 
 string Utils::lowerText(string txt) {
+
     stringstream u;
 
-    for (auto x : txt) {
-        u << (char) tolower(x);
-    }
-
+    for (auto x : txt) u << (char) tolower(x);
     return u.str();
 }
 
@@ -229,12 +208,8 @@ string Utils::setToComSepString(set<string> s) {
 
     string rstr;
 
-    for (auto str : s) {
-        rstr.append(str + ",");
-    }
-
+    for (auto str : s) rstr.append(str + ",");
     rstr.erase(rstr.find_last_of(','));
-
     return rstr;
 }
 
@@ -245,16 +220,15 @@ string Utils::generateJailMaxCPU(double cpu_percent) {
 string Utils::generateMaxCPU(double cpu_percent, string cpu_max_file) {
 
     CgroupCPUMax cpu_max = parseCPUMaxFile(cpu_max_file);
-
-    if (cpu_percent > 0 && cpu_percent < 100)
-        return to_string( static_cast<long>((stol(cpu_max.period) / 100) * cpu_percent)) + " " + cpu_max.period;
-    else
-        return "max " + string(cpu_max.period);
+    if (cpu_percent > 0 && cpu_percent < 100) return to_string( static_cast<long>((stol(cpu_max.period) / 100) * cpu_percent)) + " " + cpu_max.period;
+    else return "max " + string(cpu_max.period);
 
 }
 
 UptimeIdle Utils::getSystemUptime() {
+
     UptimeIdle utit;
+
     FILE* file;
     try {
         file = fopen(PROC_UPTIME_FILE, "r");
@@ -365,35 +339,35 @@ ProcSysStat Utils::parseStatFile() {
 
     // only read total-values, no need to parse each core
     try {
-         string output = readFromFile(PROC_STAT_FILE);
-         sys_stat.active_cores = Utils::getActiveCoresCount(&output);
+        string output = readFromFile(PROC_STAT_FILE);
+        sys_stat.active_cores = Utils::getActiveCoresCount(&output);
 
-         sscanf(output.c_str(),
-                "cpu  %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu",
-                &sys_stat.user_time,
-                &sys_stat.nice_time,
-                &sys_stat.system_time,
-                &sys_stat.idle_time,
-                &sys_stat.io_wait,
-                &sys_stat.irq,
-                &sys_stat.soft_irq,
-                &sys_stat.steal,
-                &sys_stat.guest,
-                &sys_stat.guest_nice
-         );
+        sscanf(output.c_str(),
+            "cpu  %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu",
+            &sys_stat.user_time,
+            &sys_stat.nice_time,
+            &sys_stat.system_time,
+            &sys_stat.idle_time,
+            &sys_stat.io_wait,
+            &sys_stat.irq,
+            &sys_stat.soft_irq,
+            &sys_stat.steal,
+            &sys_stat.guest,
+            &sys_stat.guest_nice
+        );
 
-         // calculate the total cpu time
-         sys_stat.idle_all_time = sys_stat.idle_time + sys_stat.io_wait;
-         sys_stat.system_all_time = sys_stat.system_time + sys_stat.irq + sys_stat.soft_irq;
-         sys_stat.virtual_time = sys_stat.guest + sys_stat.guest_nice;
+        // calculate the total cpu time
+        sys_stat.idle_all_time = sys_stat.idle_time + sys_stat.io_wait;
+        sys_stat.system_all_time = sys_stat.system_time + sys_stat.irq + sys_stat.soft_irq;
+        sys_stat.virtual_time = sys_stat.guest + sys_stat.guest_nice;
 
-         sys_stat.total_time = sys_stat.user_time
-                 + sys_stat.nice_time
-                 + sys_stat.system_all_time
-                 + sys_stat.idle_all_time
-                 + sys_stat.steal
-                 + sys_stat.virtual_time;
-         sys_stat.period = (double)sys_stat.total_time / sys_stat.active_cores;
+        sys_stat.total_time = sys_stat.user_time
+            + sys_stat.nice_time
+            + sys_stat.system_all_time
+            + sys_stat.idle_all_time
+            + sys_stat.steal
+            + sys_stat.virtual_time;
+        sys_stat.period = (double)sys_stat.total_time / sys_stat.active_cores;
 
     }  catch (...) {
         sys_stat.valid = false;
@@ -410,8 +384,8 @@ CgroupCPUMax Utils::parseCPUMaxFile(string file) {
     CgroupCPUMax cpu_max;
 
     try {
-         string output = readFromFile(file);
-         sscanf(output.c_str(), "%s %s", cpu_max.max_value, cpu_max.period);
+        string output = readFromFile(file);
+        sscanf(output.c_str(), "%s %s", cpu_max.max_value, cpu_max.period);
 
     } catch(...) {
         strcpy(cpu_max.max_value, "max");
