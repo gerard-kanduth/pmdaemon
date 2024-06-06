@@ -248,7 +248,7 @@ bool Controller::iterateProcessList() {
                     if (c_process_pid == daemon_pid) continue;
 
                     // check the current process
-                    if (fetchProcessInfo(c_process_pid)) checkProcess(&c_process);
+                    if (fetchProcessInfo(c_process_pid)) checkProcess(c_process);
 
                 }
             }
@@ -274,24 +274,24 @@ bool Controller::iterateProcessList() {
     return true;
 }
 
-bool Controller::checkProcess(Process* process) {
+bool Controller::checkProcess(Process &process) {
 
     if (logger->getLogLevel() >= DEBUG1) {
         stringstream ss;
-        ss << "PID: " << to_string(process->pid);
-        ss << " STATE: " << process->state;
-        ss << " USER: " << process->user;
-        ss << " RSS: " << to_string(process->rss);
-        ss << " PMEM: " << to_string(process->pmem);
-        ss << " PCPU: " << to_string(process->pcpu);
-        ss << " COMM: " << process->command;
+        ss << "PID: " << to_string(process.pid);
+        ss << " STATE: " << process.state;
+        ss << " USER: " << process.user;
+        ss << " RSS: " << to_string(process.rss);
+        ss << " PMEM: " << to_string(process.pmem);
+        ss << " PCPU: " << to_string(process.pcpu);
+        ss << " COMM: " << process.command;
         logger->logDebug(ss.str());
     }
 
     // check if a specific rule for the command is available if LOAD_RULES is enabled
     if (load_rules) {
 
-        specific_rule = rulemanager->loadIfRuleExists(process->command);
+        specific_rule = rulemanager->loadIfRuleExists(process.command);
 
         if (specific_rule != nullptr) {
 
@@ -299,29 +299,29 @@ bool Controller::checkProcess(Process* process) {
 
             // skip command if the NO_CHECK setting is set in rule
             if (specific_rule->no_check) {
-                if (logger->getLogLevel() >= DEBUG1) logger->logDebug("Skipping PID '" + to_string(process->pid) + "' due to NO_CHECK in rule " + specific_rule->rule_name);
+                if (logger->getLogLevel() >= DEBUG1) logger->logDebug("Skipping PID '" + to_string(process.pid) + "' due to NO_CHECK in rule " + specific_rule->rule_name);
                 return true;
 
             } else {
 
                 // load all available settings from specific rule
                 // default values from settings-file will be used if value is '-1'
-                (specific_rule->cpu_trigger_threshold != -1) ? cpu_trigger_threshold = &specific_rule->cpu_trigger_threshold : cpu_trigger_threshold = &default_cpu_trigger_threshold;
-                (specific_rule->mem_trigger_threshold != -1) ? mem_trigger_threshold = &specific_rule->mem_trigger_threshold : mem_trigger_threshold = &default_mem_trigger_threshold;
-                (specific_rule->checks_before_alert != -1) ? checks_before_alert = &specific_rule->checks_before_alert : checks_before_alert = &default_checks_before_alert;
-                send_notifications = &specific_rule->send_notifications;
+                (specific_rule->cpu_trigger_threshold != -1) ? cpu_trigger_threshold = specific_rule->cpu_trigger_threshold : cpu_trigger_threshold = default_cpu_trigger_threshold;
+                (specific_rule->mem_trigger_threshold != -1) ? mem_trigger_threshold = specific_rule->mem_trigger_threshold : mem_trigger_threshold = default_mem_trigger_threshold;
+                (specific_rule->checks_before_alert != -1) ? checks_before_alert = specific_rule->checks_before_alert : checks_before_alert = default_checks_before_alert;
+                send_notifications = specific_rule->send_notifications;
 
-                if (logger->getLogLevel() == DEBUG2) logger->logDebug("Checking '" + process->command + "' with PID '" + to_string(process->pid) + "' using rule '" + specific_rule->rule_name + "'");
+                if (logger->getLogLevel() == DEBUG2) logger->logDebug("Checking '" + process.command + "' with PID '" + to_string(process.pid) + "' using rule '" + specific_rule->rule_name + "'");
 
             }
 
         } else {
 
             // needs to be set before dropping out if SPECIFIC_RULES_CHECK_ONLY is enabled
-            cpu_trigger_threshold = &default_cpu_trigger_threshold;
-            mem_trigger_threshold = &default_mem_trigger_threshold;
-            checks_before_alert = &default_checks_before_alert;
-            send_notifications = &default_send_notifications;
+            cpu_trigger_threshold = default_cpu_trigger_threshold;
+            mem_trigger_threshold = default_mem_trigger_threshold;
+            checks_before_alert = default_checks_before_alert;
+            send_notifications = default_send_notifications;
             specific_proc_rule = false;
 
             // do not check processes if SPECIFIC_RULES_CHECK_ONLY is enabled
@@ -332,30 +332,30 @@ bool Controller::checkProcess(Process* process) {
 
     // check if threshold is reached, add the PID to penalty list if so
     // value of '0' will disable the CPU monitoring
-    if (*cpu_trigger_threshold > 0 && process->pcpu > *cpu_trigger_threshold) {
-        logger->logDebug("PID " + to_string(process->pid)+ " has a load of " + to_string(process->pcpu)
-                         + " [Limit: " + to_string(*cpu_trigger_threshold) + " %]");
+    if (cpu_trigger_threshold > 0 && process.pcpu > cpu_trigger_threshold) {
+        logger->logDebug("PID " + to_string(process.pid)+ " has a load of " + to_string(process.pcpu)
+                         + " [Limit: " + to_string(cpu_trigger_threshold) + " %]");
          return checkPenaltyList(process, "cpu");
     }
 
     // memory can either be compared in percent or absolute values but will always be compared with RSS value of PID
     // value of '0' will disable the memory monitoring
-    if (*mem_trigger_threshold > 0 && process->rss > *mem_trigger_threshold) {
-        logger->logDebug("PID " + to_string(process->pid)+ " uses "
-                         + to_string(process->rss) + " Bytes of RAM (" + to_string(process->pmem)
-                         + "% of Total System RAM) [Limit: " + to_string(*mem_trigger_threshold) + " Bytes]");
+    if (mem_trigger_threshold > 0 && process.rss > mem_trigger_threshold) {
+        logger->logDebug("PID " + to_string(process.pid)+ " uses "
+                         + to_string(process.rss) + " Bytes of RAM (" + to_string(process.pmem)
+                         + "% of Total System RAM) [Limit: " + to_string(mem_trigger_threshold) + " Bytes]");
         return checkPenaltyList(process, "mem");
     }
 
     // check the status of the process if STATE_TRIGGER is enabled
     if (state_trigger) {
-        if (process->state == "Z") {
-            logger->logDebug("PID " + to_string(process->pid) + " state changed to ZOMBIE (" + process->state + ")");
+        if (process.state == "Z") {
+            logger->logDebug("PID " + to_string(process.pid) + " state changed to ZOMBIE (" + process.state + ")");
             return checkPenaltyList(process, "zombie");
         }
 
-        if (process->state == "D") {
-            logger->logDebug("PID " + to_string(process->pid) + " state changed to UNINTERRUPTIBLE SLEEP (" + process->state + ")");
+        if (process.state == "D") {
+            logger->logDebug("PID " + to_string(process.pid) + " state changed to UNINTERRUPTIBLE SLEEP (" + process.state + ")");
             return checkPenaltyList(process, "dstate");
         }
     }
@@ -365,27 +365,27 @@ bool Controller::checkProcess(Process* process) {
 }
 
 // check if PID is on penalty list, if not add it
-bool Controller::checkPenaltyList(Process *process, string penalty_cause) {
+bool Controller::checkPenaltyList(Process &process, string penalty_cause) {
 
     // if pid is in penalty list raise counter
     penalty_list_it = penalty_list.begin();
-    penalty_list_it = penalty_list.find(process->pid);
+    penalty_list_it = penalty_list.find(process.pid);
     if (penalty_list_it != penalty_list.end()
             && penalty_list_it->second.penalty_cause == penalty_cause
-            && penalty_list_it->second.start_time == process->proc_pid_stat.start_time) {
+            && penalty_list_it->second.start_time == process.proc_pid_stat.start_time) {
 
-        logger->logDebug("PID " + to_string(process->pid) + " is already on penalty list.");
+        logger->logDebug("PID " + to_string(process.pid) + " is already on penalty list.");
 
         if (!penalty_list_it->second.in_cgroup && !penalty_list_it->second.alerted) penalty_list_it->second.penalty_counter++;
 
         // alert if not already alerted
-        if (penalty_list_it->second.penalty_counter >= *checks_before_alert
+        if (penalty_list_it->second.penalty_counter >= checks_before_alert
                 && !penalty_list_it->second.alerted
                 && !penalty_list_it->second.in_cgroup) {
 
             penalty_list_it->second.penalty_counter = 0;
 
-            if (*send_notifications) {
+            if (send_notifications) {
                 if (graylog_enabled || logstash_enabled) SendMessage(collectProcessInfo(process, penalty_cause), ALERT);
             }
 
@@ -393,25 +393,25 @@ bool Controller::checkPenaltyList(Process *process, string penalty_cause) {
             if (!specific_proc_rule && global_action_enabled) {
 
                 stringstream ss;
-                ss  << " PID: "   << to_string(process->pid)
-                    << " UID: "   << to_string(process->uid)
-                    << " USER: "  << process->user
+                ss  << " PID: "   << to_string(process.pid)
+                    << " UID: "   << to_string(process.uid)
+                    << " USER: "  << process.user
                     << " CAUSE: " << penalty_cause
-                    << " PCPU: "  << to_string(process->pcpu)
-                    << " PMEM: "  << to_string(process->pmem)
-                    << " RSS: "   << to_string(process->rss);
+                    << " PCPU: "  << to_string(process.pcpu)
+                    << " PMEM: "  << to_string(process.pmem)
+                    << " RSS: "   << to_string(process.rss);
 
                 // check if pid is on global penalty list
                 global_penalty_list_it = global_penalty_list.begin();
-                global_penalty_list_it = global_penalty_list.find(process->pid);
+                global_penalty_list_it = global_penalty_list.find(process.pid);
 
                 // pid is on list
                 if (global_penalty_list_it != global_penalty_list.end()
                         && global_penalty_list_it->second.penalty_cause == penalty_cause
-                        && global_penalty_list_it->second.start_time == process->proc_pid_stat.start_time
+                        && global_penalty_list_it->second.start_time == process.proc_pid_stat.start_time
                         && !global_penalty_list_it->second.in_cgroup) {
 
-                    logger->logDebug("PID " + to_string(process->pid) + " is already on global penalty list.");
+                    logger->logDebug("PID " + to_string(process.pid) + " is already on global penalty list.");
                     if (global_penalty_list_it->second.alert_counter < max_alerts_global_action) global_penalty_list_it->second.alert_counter++;
 
                     // perform desired action if max_alerts was reached
@@ -419,27 +419,27 @@ bool Controller::checkPenaltyList(Process *process, string penalty_cause) {
 
                         switch (global_action) {
                         case ACTION_KILL:
-                            if (pidKill(process->pid)) {
+                            if (pidKill(process.pid)) {
                                 global_penalty_list.erase(global_penalty_list_it);
                                 logger->logInfo("ACTION: global-kill" + ss.str());
-                                if (*send_notifications && (graylog_enabled || logstash_enabled))
+                                if (send_notifications && (graylog_enabled || logstash_enabled))
                                     SendMessage(collectProcessInfo(process, penalty_cause), GLOBAL_KILL);
                             }
                             break;
                         case ACTION_FREEZE:
-                            if (pidPause(process->pid)) {
+                            if (pidPause(process.pid)) {
                                 global_penalty_list.erase(global_penalty_list_it);
                                 logger->logInfo("ACTION: global-freeze" + ss.str());
-                                if (*send_notifications && (graylog_enabled || logstash_enabled))
+                                if (send_notifications && (graylog_enabled || logstash_enabled))
                                     SendMessage(collectProcessInfo(process, penalty_cause), GLOBAL_FREEZE);
                             }
                             break;
                         case ACTION_JAIL:
-                            if (addPidToJail(process->pid)) {
-                                global_penalty_list[process->pid].in_cgroup = true;
-                                global_penalty_list[process->pid].cgroup_name = JAIL_CGROUP CGROUP_PID_PREFIX + to_string(process->pid);
+                            if (addPidToJail(process.pid)) {
+                                global_penalty_list[process.pid].in_cgroup = true;
+                                global_penalty_list[process.pid].cgroup_name = JAIL_CGROUP CGROUP_PID_PREFIX + to_string(process.pid);
                                 logger->logInfo("ACTION: jail" + ss.str());
-                                if (*send_notifications && (graylog_enabled || logstash_enabled))
+                                if (send_notifications && (graylog_enabled || logstash_enabled))
                                     SendMessage(collectProcessInfo(process, penalty_cause), JAIL);
                             }
                             break;
@@ -456,13 +456,13 @@ bool Controller::checkPenaltyList(Process *process, string penalty_cause) {
                 } else {
                     // add the pid to the global penalty list if not found
                     GlobalPenaltyListItem global_penalty_pid;
-                    global_penalty_pid.pid = process->pid;
-                    global_penalty_pid.start_time = process->proc_pid_stat.start_time;
+                    global_penalty_pid.pid = process.pid;
+                    global_penalty_pid.start_time = process.proc_pid_stat.start_time;
                     global_penalty_pid.alert_counter = 1;
                     global_penalty_pid.penalty_cause = penalty_cause;
                     global_penalty_pid.cgroup_name = "none";
-                    global_penalty_list[process->pid] = global_penalty_pid;
-                    logger->logDebug("Added PID " + to_string(process->pid) + " (" + process->user + ") to global penalty list due to " + penalty_cause + ".");
+                    global_penalty_list[process.pid] = global_penalty_pid;
+                    logger->logDebug("Added PID " + to_string(process.pid) + " (" + process.user + ") to global penalty list due to " + penalty_cause + ".");
                 }
 
             }
@@ -473,45 +473,45 @@ bool Controller::checkPenaltyList(Process *process, string penalty_cause) {
 
                 stringstream ss;
                 ss  << " RULE: "  << specific_rule->rule_name
-                    << " PID: "   << to_string(process->pid)
-                    << " UID: "   << to_string(process->uid)
+                    << " PID: "   << to_string(process.pid)
+                    << " UID: "   << to_string(process.uid)
                     << " CAUSE: " << penalty_cause
-                    << " PCPU: "  << to_string(process->pcpu)
-                    << " PMEM: "  << to_string(process->pmem)
-                    << " RSS: "   << to_string(process->rss);
+                    << " PCPU: "  << to_string(process.pcpu)
+                    << " PMEM: "  << to_string(process.pmem)
+                    << " RSS: "   << to_string(process.rss);
 
                 // if ENABLE_LIMITING is set to 1 limit the process and add it to the corresponding cgroup
                 if (specific_rule->enable_limiting) {
                     if (doLimit(process)) {
                             penalty_list_it->second.in_cgroup = true;
                             logger->logInfo("ACTION: limit" + ss.str());
-                            if (*send_notifications && (graylog_enabled || logstash_enabled))
+                            if (send_notifications && (graylog_enabled || logstash_enabled))
                                 SendMessage(collectProcessInfo(process, penalty_cause), LIMIT);
                     } else {
-                        logger->logError("[" + specific_rule->rule_name + "] Unable to add PID " + to_string(process->pid) + " to cgroup " + specific_rule->cgroup_name);
+                        logger->logError("[" + specific_rule->rule_name + "] Unable to add PID " + to_string(process.pid) + " to cgroup " + specific_rule->cgroup_name);
                     }
                 }
 
                 // if PID_KILL_ENABLED is set to 1 simply kill the process
                 if (specific_rule->pid_kill_enabled) {
-                    if (!pidKill(process->pid)) {
-                        logger->logError("Unable to terminate PID " + to_string(process->pid));
+                    if (!pidKill(process.pid)) {
+                        logger->logError("Unable to terminate PID " + to_string(process.pid));
                         return false;
                     }
                     logger->logInfo("ACTION: kill" + ss.str());
-                    if (*send_notifications && (graylog_enabled || logstash_enabled))
+                    if (send_notifications && (graylog_enabled || logstash_enabled))
                         SendMessage(collectProcessInfo(process, penalty_cause), KILL);
                     return true;
                 }
 
                 // if FREEZE is set to 1 simply pause the process
                 if (specific_rule->freeze) {
-                    if (!pidPause(process->pid)) {
-                        logger->logError("Unable to pause PID " + to_string(process->pid));
+                    if (!pidPause(process.pid)) {
+                        logger->logError("Unable to pause PID " + to_string(process.pid));
                         return false;
                     }
                     logger->logInfo("ACTION: freeze" + ss.str());
-                    if (*send_notifications && (graylog_enabled || logstash_enabled))
+                    if (send_notifications && (graylog_enabled || logstash_enabled))
                         SendMessage(collectProcessInfo(process, penalty_cause), FREEZE);
                     return true;
                 }
@@ -540,14 +540,14 @@ bool Controller::checkPenaltyList(Process *process, string penalty_cause) {
     } else {
         // add the pid to the penalty list if not found
         PenaltyListItem penalty_pid;
-        penalty_pid.pid = process->pid;
-        penalty_pid.start_time = process->proc_pid_stat.start_time;
+        penalty_pid.pid = process.pid;
+        penalty_pid.start_time = process.proc_pid_stat.start_time;
         penalty_pid.penalty_counter = 1;
         penalty_pid.cooldown_counter = checks_cooldown;
         penalty_pid.penalty_cause = penalty_cause;
 
-        penalty_list[process->pid] = penalty_pid;
-        logger->logDebug("Added PID " + to_string(process->pid) + " (" + process->user + ") to penalty list due to " + penalty_cause + ".");
+        penalty_list[process.pid] = penalty_pid;
+        logger->logDebug("Added PID " + to_string(process.pid) + " (" + process.user + ") to penalty list due to " + penalty_cause + ".");
     }
 
     return true;
@@ -612,16 +612,16 @@ bool Controller::cleanupPenaltyList() {
     return true;
 }
 
-bool Controller::addPIDToCgroup(string* cgroup_parent_group, long* pid) {
+bool Controller::addPIDToCgroup(string& cgroup_parent_group, long& pid) {
 
     stringstream cgroup;
     stringstream cgroup_procs_file;
-    cgroup << *cgroup_parent_group << CGROUP_PID_PREFIX << to_string(*pid);
+    cgroup << cgroup_parent_group << CGROUP_PID_PREFIX << to_string(pid);
     cgroup_procs_file << cgroup.str() << CGROUP_PROCS_FILE;
 
     if (!fs::exists(cgroup.str())) createPIDCgroup(cgroup_parent_group, pid);
 
-    return Utils::writeToFile(cgroup_procs_file.str(), to_string(*pid));
+    return Utils::writeToFile(cgroup_procs_file.str(), to_string(pid));
 
 }
 
@@ -636,10 +636,10 @@ bool Controller::addPidToJail(long pid) {
 
 }
 
-bool Controller::checkIfCgroupEmpty(string* cgroup_parent_group, long* pid) {
+bool Controller::checkIfCgroupEmpty(string& cgroup_parent_group, long& pid) {
 
     stringstream proc_file_name;
-    proc_file_name << *cgroup_parent_group << CGROUP_PID_PREFIX << to_string(*pid) << CGROUP_CUR_PIDS_FILE;
+    proc_file_name << cgroup_parent_group << CGROUP_PID_PREFIX << to_string(pid) << CGROUP_CUR_PIDS_FILE;
 
     fstream proc_file;
     proc_file.open(proc_file_name.str(), ios::in);
@@ -709,10 +709,10 @@ bool Controller::cleanupCgroups(bool remove_cgroups) {
     return cleanup_successful;
 }
 
-bool Controller::createPIDCgroup(string* cgroup_parent_group, long* pid) {
+bool Controller::createPIDCgroup(string& cgroup_parent_group, long& pid) {
 
     stringstream cgroup;
-    cgroup << *cgroup_parent_group << CGROUP_PID_PREFIX << to_string(*pid);
+    cgroup << cgroup_parent_group << CGROUP_PID_PREFIX << to_string(pid);
 
     if (mkdir(cgroup.str().c_str(), 0755) != -1) {
         logger->logInfo("Created cgroup " + cgroup.str());
@@ -784,8 +784,8 @@ bool Controller::createJailCgroup(double cpu_limit, long long mem_limit) {
 
 }
 
-bool Controller::doLimit(Process* process) {
-    return addPIDToCgroup(&specific_rule->cgroup_root_dir, &process->pid);
+bool Controller::doLimit(Process &process) {
+    return addPIDToCgroup(specific_rule->cgroup_root_dir, process.pid);
 }
 
 bool Controller::removeCgroup(string cgroup) {
@@ -808,44 +808,44 @@ bool Controller::removePidFromCgroup(long pid) {
 }
 
 // collect information about the process
-ProcessInfo Controller::collectProcessInfo(Process* process, string cause) {
+ProcessInfo Controller::collectProcessInfo(Process& process, string cause) {
 
     ProcessInfo process_info;
-    process_info._process = *process;
+    process_info._process = process;
     process_info._cause = cause;
 
     // read /proc/<pid>/status
-    process_info._status = readProcFile("status", &process->pid);
+    process_info._status = readProcFile("status", process.pid);
 
     // read /proc/<pid>/io
-    process_info._io = readProcFile("io", &process->pid);
+    process_info._io = readProcFile("io", process.pid);
 
     // read /proc/<pid>/limits
-    process_info._limits = readProcFile("limits", &process->pid);
+    process_info._limits = readProcFile("limits", process.pid);
 
     // read /proc/<pid>/syscall
-    process_info._syscall = readProcFile("syscall", &process->pid);
+    process_info._syscall = readProcFile("syscall", process.pid);
 
     // read /proc/<pid>/cgroup
-    process_info._cgroup = readProcFile("cgroup", &process->pid);
+    process_info._cgroup = readProcFile("cgroup", process.pid);
 
     // read /proc/<pid>/loginuid
-    process_info._loginuid = readProcFile("loginuid", &process->pid);
+    process_info._loginuid = readProcFile("loginuid", process.pid);
 
     // read /proc/<pid>/stack
-    process_info._stack = readProcFile("stack", &process->pid);
+    process_info._stack = readProcFile("stack", process.pid);
 
     // read /proc/<pid>/environ
-    process_info._environ = readProcFile("environ", &process->pid);
+    process_info._environ = readProcFile("environ", process.pid);
 
     return process_info;
 }
 
 // used to read files from pseudo-filesystem from /proc/<pid>/ - see https://linux.die.net/man/5/proc
-string Controller::readProcFile(string filename, long* pid) {
+string Controller::readProcFile(string filename, long& pid) {
     try {
         string proc_file_content;
-        ifstream proc_file(PROC_DIR "/" + to_string(*pid) + "/" + filename);
+        ifstream proc_file(PROC_DIR "/" + to_string(pid) + "/" + filename);
         if (proc_file.is_open()) {
             string line;
             while(getline(proc_file, line)){
@@ -855,60 +855,60 @@ string Controller::readProcFile(string filename, long* pid) {
         proc_file.close();
         return proc_file_content;
     } catch (...) {
-        logger->logError("Unable to read from " PROC_DIR "/" + to_string(*pid) + "/" + filename);
+        logger->logError("Unable to read from " PROC_DIR "/" + to_string(pid) + "/" + filename);
         return "no data";
     }
 }
 
 void Controller::SendMessage(ProcessInfo process_info, MessageType mtype) {
 
-    Process *proc = &process_info._process;
+    Process proc = process_info._process;
 
     string short_message;
     string json_data;
     string message_type;
 
     // remove trailing zeroes on measured values
-    snprintf(limit_pcpu, 32, "%.2f", proc->pcpu);
-    snprintf(limit_pmem, 32, "%.2f", proc->pmem);
+    snprintf(limit_pcpu, 32, "%.2f", proc.pcpu);
+    snprintf(limit_pmem, 32, "%.2f", proc.pmem);
 
     switch(mtype) {
         case ALERT:
             message_type = "alert";
             if (process_info._cause == "cpu")
-                short_message = "[ ALERT ] Process with PID " + to_string(proc->pid) + " produces a load of " + limit_pcpu + "!";
+                short_message = "[ ALERT ] Process with PID " + to_string(proc.pid) + " produces a load of " + limit_pcpu + "!";
             else if (process_info._cause == "mem")
-                short_message = "[ ALERT ] Process with PID " + to_string(proc->pid) + " is using " + limit_pmem + "% of RAM!";
+                short_message = "[ ALERT ] Process with PID " + to_string(proc.pid) + " is using " + limit_pmem + "% of RAM!";
             else if (process_info._cause == "zombie")
-                short_message = "[ ALERT ] Process with PID " + to_string(proc->pid) + " has changed the state to ZOMBIE!";
+                short_message = "[ ALERT ] Process with PID " + to_string(proc.pid) + " has changed the state to ZOMBIE!";
             else if (process_info._cause == "dstate")
-                short_message = "[ ALERT ] Process with PID " + to_string(proc->pid) + " has changed the state to UNINTERRUPTIBLE SLEEP!";
+                short_message = "[ ALERT ] Process with PID " + to_string(proc.pid) + " has changed the state to UNINTERRUPTIBLE SLEEP!";
             else
                 short_message = "[ ERROR ] No short-message!";
             break;
         case KILL:
             message_type = "kill";
-            short_message = "[ KILL ] Process with PID " + to_string(proc->pid) + " was killed!";
+            short_message = "[ KILL ] Process with PID " + to_string(proc.pid) + " was killed!";
             break;
         case GLOBAL_KILL:
             message_type = "global_kill";
-            short_message = "[ KILL ] Process with PID " + to_string(proc->pid) + " was killed!";
+            short_message = "[ KILL ] Process with PID " + to_string(proc.pid) + " was killed!";
             break;
         case LIMIT:
             message_type = "limit";
-            short_message = "[ LIMIT ] Process with PID " + to_string(proc->pid) + " was added to cgroup!";
+            short_message = "[ LIMIT ] Process with PID " + to_string(proc.pid) + " was added to cgroup!";
             break;
         case FREEZE:
             message_type = "freeze";
-            short_message = "[ FREEZE ] Process with PID " + to_string(proc->pid) + " was paused!";
+            short_message = "[ FREEZE ] Process with PID " + to_string(proc.pid) + " was paused!";
             break;
         case GLOBAL_FREEZE:
             message_type = "global_freeze";
-            short_message = "[ FREEZE ] Process with PID " + to_string(proc->pid) + " was paused!";
+            short_message = "[ FREEZE ] Process with PID " + to_string(proc.pid) + " was paused!";
             break;
         case JAIL:
             message_type = "jail";
-            short_message = "[ JAIL ] Process with PID " + to_string(proc->pid) + " was put to jail!";
+            short_message = "[ JAIL ] Process with PID " + to_string(proc.pid) + " was put to jail!";
             break;
     }
 
@@ -924,10 +924,10 @@ void Controller::SendMessage(ProcessInfo process_info, MessageType mtype) {
         << "\"_service\":\"" << DAEMON_NAME << "\","
         << "\"_server\":\"" << string(hostname) << "\","
         << "\"_mtype\":\"" << message_type << "\","
-        << "\"_pid\":" << to_string(proc->pid) << ","
-        << "\"_user\":\"" << proc->user << "\","
+        << "\"_pid\":" << to_string(proc.pid) << ","
+        << "\"_user\":\"" << proc.user << "\","
         << "\"_pcpu\":" << limit_pcpu << ","
-        << "\"_pmem\":" << to_string(proc->pmem) << ","
+        << "\"_pmem\":" << to_string(proc.pmem) << ","
         << "\"_status\": \"" << process_info._status << "\","
         << "\"_loginuid\": " << process_info._loginuid << ","
         << "\"_io\": \"" << process_info._io << "\","
@@ -935,8 +935,8 @@ void Controller::SendMessage(ProcessInfo process_info, MessageType mtype) {
         << "\"_syscall\": \"" << process_info._syscall << "\","
         << "\"_cgroup\": \"" << process_info._cgroup << "\","
         << "\"_cause\": \"" << process_info._cause << "\","
-        << "\"_state\": \"" << proc->state << "\","
-        << "\"_command\": \"" << proc->command <<"\""
+        << "\"_state\": \"" << proc.state << "\","
+        << "\"_command\": \"" << proc.command <<"\""
         << "}";
 
         // the json-body which will be send
@@ -963,10 +963,10 @@ void Controller::SendMessage(ProcessInfo process_info, MessageType mtype) {
         << "\"server\":\"" << string(hostname) << "\","
         << "\"short_message\":\"" << short_message << "\","
         << "\"mtype\":\"" << message_type << "\","
-        << "\"pid\":" << to_string(proc->pid) << ","
-        << "\"user\":\"" << proc->user << "\","
+        << "\"pid\":" << to_string(proc.pid) << ","
+        << "\"user\":\"" << proc.user << "\","
         << "\"pcpu\":" << limit_pcpu << ","
-        << "\"pmem\":" << to_string(proc->pmem) << ","
+        << "\"pmem\":" << to_string(proc.pmem) << ","
         << "\"status\": \"" << process_info._status << "\","
         << "\"loginuid\": " << process_info._loginuid << ","
         << "\"io\": \"" << process_info._io << "\","
@@ -974,8 +974,8 @@ void Controller::SendMessage(ProcessInfo process_info, MessageType mtype) {
         << "\"syscall\": \"" << process_info._syscall << "\","
         << "\"cgroup\": \"" << process_info._cgroup << "\","
         << "\"cause\": \"" << process_info._cause << "\","
-        << "\"state\": \"" << proc->state << "\","
-        << "\"command\": \"" << proc->command <<"\""
+        << "\"state\": \"" << proc.state << "\","
+        << "\"command\": \"" << proc.command <<"\""
         << "}";
 
         json_data = ss.str();

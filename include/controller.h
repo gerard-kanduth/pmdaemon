@@ -101,16 +101,16 @@ class Controller {
 
         // defaults which will be used, can be overwritten by specific rule
         int default_checks_before_alert;
-        int* checks_before_alert = &default_checks_before_alert;
+        int checks_before_alert = default_checks_before_alert;
 
         double default_cpu_trigger_threshold;
-        double* cpu_trigger_threshold = &default_cpu_trigger_threshold;
+        double cpu_trigger_threshold = default_cpu_trigger_threshold;
 
         long long default_mem_trigger_threshold;
-        long long* mem_trigger_threshold = &default_mem_trigger_threshold;
+        long long mem_trigger_threshold = default_mem_trigger_threshold;
 
         bool default_send_notifications;
-        bool* send_notifications = &default_send_notifications;
+        bool send_notifications = default_send_notifications;
 
         // graylog related variables
         bool graylog_enabled;
@@ -137,26 +137,26 @@ class Controller {
         TransportType logstash_transport_method;
 
         // private functions
-        ProcessInfo collectProcessInfo(Process*, string);
+        ProcessInfo collectProcessInfo(Process&, string);
         bool fetchProcessInfo(long);
-        bool addPIDToCgroup(string*, long*);
+        bool addPIDToCgroup(string&, long&);
         bool addPidToJail(long);
-        bool checkProcess(Process*);
+        bool checkProcess(Process&);
         bool curlPostJSON(const char*, MessageCollector);
-        bool checkIfCgroupEmpty(string*, long*);
-        bool checkPenaltyList(Process*, string);
+        bool checkIfCgroupEmpty(string&, long&);
+        bool checkPenaltyList(Process&, string);
         bool cleanupPenaltyList();
-        bool createPIDCgroup(string*, long*);
+        bool createPIDCgroup(string&, long&);
         bool createJailPIDCgroup(string);
         bool createJailCgroup(double, long long);
-        bool doLimit(Process*);
+        bool doLimit(Process&);
         bool enableCgroupControllers();
         bool iterateProcessList();
         bool pidPause(long);
         bool pidKill(long);
         bool removeCgroup(string);
         bool removePidFromCgroup(long);
-        string readProcFile(string, long*);
+        string readProcFile(string, long&);
         void SendMessage(ProcessInfo, MessageType);
 
     public:
