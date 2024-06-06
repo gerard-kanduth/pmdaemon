@@ -59,7 +59,7 @@ class RuleManager {
 
         unordered_map<string, Rule> rules;
 
-        bool createCgroup(Rule*);
+        bool createCgroup(Rule&);
         bool checkIfRuleIsValid(unordered_map<string, string>);
         bool generateRuleFromFile(string);
         bool registerRule(unordered_map<string, string>);

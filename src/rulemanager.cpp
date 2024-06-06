@@ -37,7 +37,7 @@ bool RuleManager::generateRuleFromFile(string filename) {
                 // register cgroups if enabled
                 if (rules[file_content.rule["RULE_NAME"]].enable_limiting) {
                     logger->logInfo("Registering cgroup " + rules[file_content.rule["RULE_NAME"]].cgroup_name);
-                    createCgroup(&rules[file_content.rule["RULE_NAME"]]);
+                    createCgroup(rules[file_content.rule["RULE_NAME"]]);
                 }
             } else {
                 logger->logError("Unable to register rule! Error parsing rule settings.");
@@ -351,55 +351,55 @@ bool RuleManager::registerRule(unordered_map<string, string> file_content) {
 
 }
 
-bool RuleManager::createCgroup(Rule* rule) {
+bool RuleManager::createCgroup(Rule &rule) {
 
     // at least one cgroup setting must be set otherwise rule is broken
-    if ( rule->limit_cpu_percent >= 0 || rule->limit_memory_value >= 0 ||  rule->freeze || rule->oom_kill_enabled || rule->pid_kill_enabled) {
+    if ( rule.limit_cpu_percent >= 0 || rule.limit_memory_value >= 0 ||  rule.freeze || rule.oom_kill_enabled || rule.pid_kill_enabled) {
 
         // check if the cgroup already exists, otherwise create it
-        if (fs::exists(rule->cgroup_root_dir.c_str())) {
-            logger->logInfo("Cgroup " + rule->cgroup_root_dir + " already exists!");
+        if (fs::exists(rule.cgroup_root_dir.c_str())) {
+            logger->logInfo("Cgroup " + rule.cgroup_root_dir + " already exists!");
         } else {
 
-            if (mkdir(rule->cgroup_root_dir.c_str(), 0755) != -1) {
-                logger->logInfo("Created cgroup " + rule->cgroup_root_dir);
+            if (mkdir(rule.cgroup_root_dir.c_str(), 0755) != -1) {
+                logger->logInfo("Created cgroup " + rule.cgroup_root_dir);
             } else {
-                logger->logError("Unable to create cgroup " + rule->cgroup_root_dir);
+                logger->logError("Unable to create cgroup " + rule.cgroup_root_dir);
                 return false;
             }
         }
 
         // prepare the freezer file for the given cgroup
         string freeze;
-        if (rule->freeze) freeze = "1";
+        if (rule.freeze) freeze = "1";
         else freeze = "0";
-        if (!Utils::writeToFile(rule->cgroup_freezer_file, freeze)) {
-            logger->logError("Something went wrong while modifying " + rule->cgroup_freezer_file);
+        if (!Utils::writeToFile(rule.cgroup_freezer_file, freeze)) {
+            logger->logError("Something went wrong while modifying " + rule.cgroup_freezer_file);
             return false;
         }
 
-        if (rule->limit_cpu_percent > 0) {
+        if (rule.limit_cpu_percent > 0) {
             // prepare the cpu.max file for the given cgroup
-            string cpu_max = Utils::generateMaxCPU(rule->limit_cpu_percent, rule->cgroup_cpu_max_file);
+            string cpu_max = Utils::generateMaxCPU(rule.limit_cpu_percent, rule.cgroup_cpu_max_file);
 
-            if (!Utils::writeToFile(rule->cgroup_cpu_max_file, cpu_max)) {
-                logger->logError("Something went wrong while modifying " + rule->cgroup_cpu_max_file);
+            if (!Utils::writeToFile(rule.cgroup_cpu_max_file, cpu_max)) {
+                logger->logError("Something went wrong while modifying " + rule.cgroup_cpu_max_file);
                 return false;
             }
         }
 
-        if (rule->limit_memory_value > 0) {
+        if (rule.limit_memory_value > 0) {
             // prepare the memory.high and memory.max file for the given cgroup
             string memory_value;
-            if (rule->limit_memory_value > 0) memory_value = to_string(rule->limit_memory_value);
+            if (rule.limit_memory_value > 0) memory_value = to_string(rule.limit_memory_value);
             else memory_value = "max";
-            if (!Utils::writeToFile(rule->cgroup_memory_high_file, memory_value)) {
-                logger->logError("Something went wrong while modifying " + rule->cgroup_memory_high_file);
+            if (!Utils::writeToFile(rule.cgroup_memory_high_file, memory_value)) {
+                logger->logError("Something went wrong while modifying " + rule.cgroup_memory_high_file);
                 return false;
             }
-            if (rule->oom_kill_enabled) {
-                if (!Utils::writeToFile(rule->cgroup_memory_max_file, memory_value)) {
-                    logger->logError("Something went wrong while modifying " + rule->cgroup_memory_max_file);
+            if (rule.oom_kill_enabled) {
+                if (!Utils::writeToFile(rule.cgroup_memory_max_file, memory_value)) {
+                    logger->logError("Something went wrong while modifying " + rule.cgroup_memory_max_file);
                     return false;
                 }
             }
