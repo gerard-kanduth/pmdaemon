@@ -104,13 +104,13 @@ class Controller {
         int checks_before_alert = default_checks_before_alert;
 
         double default_cpu_trigger_threshold;
-        double cpu_trigger_threshold = default_cpu_trigger_threshold;
+        double cpu_trigger_threshold;
 
         long long default_mem_trigger_threshold;
-        long long mem_trigger_threshold = default_mem_trigger_threshold;
+        long long mem_trigger_threshold;
 
         bool default_send_notifications;
-        bool send_notifications = default_send_notifications;
+        bool send_notifications;
 
         // graylog related variables
         bool graylog_enabled;
@@ -152,10 +152,10 @@ class Controller {
         bool doLimit(Process&);
         bool enableCgroupControllers();
         bool iterateProcessList();
-        bool pidPause(long);
-        bool pidKill(long);
+        bool pausePID(long);
+        bool killPID(long);
         bool removeCgroup(string);
-        bool removePidFromCgroup(long);
+        bool removePIDFromCgroup(long);
         string readProcFile(string, long&);
         void SendMessage(ProcessInfo, MessageType);
 

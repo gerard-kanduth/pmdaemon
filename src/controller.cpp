@@ -419,7 +419,7 @@ bool Controller::checkPenaltyList(Process &process, string penalty_cause) {
 
                         switch (global_action) {
                         case ACTION_KILL:
-                            if (pidKill(process.pid)) {
+                            if (killPID(process.pid)) {
                                 global_penalty_list.erase(global_penalty_list_it);
                                 logger->logInfo("ACTION: global-kill" + ss.str());
                                 if (send_notifications && (graylog_enabled || logstash_enabled))
@@ -427,7 +427,7 @@ bool Controller::checkPenaltyList(Process &process, string penalty_cause) {
                             }
                             break;
                         case ACTION_FREEZE:
-                            if (pidPause(process.pid)) {
+                            if (pausePID(process.pid)) {
                                 global_penalty_list.erase(global_penalty_list_it);
                                 logger->logInfo("ACTION: global-freeze" + ss.str());
                                 if (send_notifications && (graylog_enabled || logstash_enabled))
@@ -485,8 +485,7 @@ bool Controller::checkPenaltyList(Process &process, string penalty_cause) {
                     if (doLimit(process)) {
                             penalty_list_it->second.in_cgroup = true;
                             logger->logInfo("ACTION: limit" + ss.str());
-                            if (send_notifications && (graylog_enabled || logstash_enabled))
-                                SendMessage(collectProcessInfo(process, penalty_cause), LIMIT);
+                            if (send_notifications && (graylog_enabled || logstash_enabled)) SendMessage(collectProcessInfo(process, penalty_cause), LIMIT);
                     } else {
                         logger->logError("[" + specific_rule->rule_name + "] Unable to add PID " + to_string(process.pid) + " to cgroup " + specific_rule->cgroup_name);
                     }
@@ -494,25 +493,23 @@ bool Controller::checkPenaltyList(Process &process, string penalty_cause) {
 
                 // if PID_KILL_ENABLED is set to 1 simply kill the process
                 if (specific_rule->pid_kill_enabled) {
-                    if (!pidKill(process.pid)) {
+                    if (!killPID(process.pid)) {
                         logger->logError("Unable to terminate PID " + to_string(process.pid));
                         return false;
                     }
                     logger->logInfo("ACTION: kill" + ss.str());
-                    if (send_notifications && (graylog_enabled || logstash_enabled))
-                        SendMessage(collectProcessInfo(process, penalty_cause), KILL);
+                    if (send_notifications && (graylog_enabled || logstash_enabled)) SendMessage(collectProcessInfo(process, penalty_cause), KILL);
                     return true;
                 }
 
                 // if FREEZE is set to 1 simply pause the process
                 if (specific_rule->freeze) {
-                    if (!pidPause(process.pid)) {
+                    if (!pausePID(process.pid)) {
                         logger->logError("Unable to pause PID " + to_string(process.pid));
                         return false;
                     }
                     logger->logInfo("ACTION: freeze" + ss.str());
-                    if (send_notifications && (graylog_enabled || logstash_enabled))
-                        SendMessage(collectProcessInfo(process, penalty_cause), FREEZE);
+                    if (send_notifications && (graylog_enabled || logstash_enabled)) SendMessage(collectProcessInfo(process, penalty_cause), FREEZE);
                     return true;
                 }
             }
@@ -553,12 +550,12 @@ bool Controller::checkPenaltyList(Process &process, string penalty_cause) {
     return true;
 }
 
-bool Controller::pidPause(long pid) {
+bool Controller::pausePID(long pid) {
     if (kill(pid, SIGSTOP) == 0) return true;
     else return false;
 }
 
-bool Controller::pidKill(long pid) {
+bool Controller::killPID(long pid) {
     if (kill(pid, SIGKILL) == 0) return true;
     else return false;
 }
@@ -678,7 +675,7 @@ bool Controller::cleanupCgroups(bool remove_cgroups) {
                     while (infile >> pid)
                     {
                         logger->logDebug("Removing PID " + to_string(pid) + " from cgroup " + cgroup_sub_dir);
-                        if (!removePidFromCgroup(pid)) {
+                        if (!removePIDFromCgroup(pid)) {
                             logger->logError("Unable to remove " + to_string(pid) + " from penalty list.");
                             cleanup_successful = false;
                         }
@@ -803,7 +800,7 @@ bool Controller::removeCgroup(string cgroup) {
     return true;
 }
 
-bool Controller::removePidFromCgroup(long pid) {
+bool Controller::removePIDFromCgroup(long pid) {
     return Utils::writeToFile(CGROUP_MAIN_PROCS_FILE, to_string(pid));
 }
 
