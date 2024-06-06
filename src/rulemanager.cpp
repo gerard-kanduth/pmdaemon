@@ -73,8 +73,8 @@ bool RuleManager::checkIfRuleIsValid(unordered_map<string, string> file_content)
     // check if memory-threshold is given in percentage or as absolute value
     string mem_trigger_threshold = file_content["MEM_TRIGGER_THRESHOLD"];
     if (!mem_trigger_threshold.empty()
-            && !Utils::isMemValue(&mem_trigger_threshold)
-            && !Utils::isDisableValue(&mem_trigger_threshold)) {
+            && !Utils::isMemValue(mem_trigger_threshold)
+            && !Utils::isDisableValue(mem_trigger_threshold)) {
         logger->logError("Invalid or missing MEM_TRIGGER_THRESHOLD value");
         return false;
     }
@@ -82,8 +82,8 @@ bool RuleManager::checkIfRuleIsValid(unordered_map<string, string> file_content)
     // check if memory-threshold is given in percentage
     string cpu_trigger_threshold = file_content["CPU_TRIGGER_THRESHOLD"];
     if (!cpu_trigger_threshold.empty()
-            && !Utils::isPercentValue(&cpu_trigger_threshold)
-            && !Utils::isDisableValue(&cpu_trigger_threshold)) {
+            && !Utils::isPercentValue(cpu_trigger_threshold)
+            && !Utils::isDisableValue(cpu_trigger_threshold)) {
         logger->logError("Invalid or missing CPU_TRIGGER_THRESHOLD value");
         return false;
     }
@@ -101,7 +101,7 @@ bool RuleManager::checkIfRuleIsValid(unordered_map<string, string> file_content)
         file_content["WILDCARD_MATCH"]
     };
     for (auto b : boolean_settings) {
-        if (!b.empty() && !Utils::isZeroOneValue(&b)) {
+        if (!b.empty() && !Utils::isZeroOneValue(b)) {
             logger->logError("Expected Integer '1' or '2' instead of '" + b + "'");
             return false;
         }
@@ -112,13 +112,13 @@ bool RuleManager::checkIfRuleIsValid(unordered_map<string, string> file_content)
         if (stoi(file_content["ENABLE_LIMITING"]) > 0) {
 
             string mem_limit_setting = file_content["LIMIT_MEMORY_VALUE"];
-            if (!Utils::isMemValue(&mem_limit_setting)) {
+            if (!Utils::isMemValue(mem_limit_setting)) {
                 logger->logError("Invalid or missing LIMIT_MEMORY_VALUE value");
                 return false;
             }
 
             string cpu_limit_setting = file_content["LIMIT_CPU_PERCENT"];
-            if (!Utils::isPercentValue(&cpu_limit_setting)) {
+            if (!Utils::isPercentValue(cpu_limit_setting)) {
                 logger->logError("Invalid or missing LIMIT_CPU_PERCENT value");
                 return false;
             }
@@ -130,7 +130,7 @@ bool RuleManager::checkIfRuleIsValid(unordered_map<string, string> file_content)
         file_content["CHECKS_BEFORE_ALERT"]
     };
     for (auto i : int_settings) {
-        if (!i.empty() && !Utils::isIntegerValue(&i) && !Utils::isDisableValue(&i)) {
+        if (!i.empty() && !Utils::isIntegerValue(i) && !Utils::isDisableValue(i)) {
             logger->logError("Expected Integer Value instead of '" + i + "'");
             return false;
         }
@@ -158,7 +158,7 @@ bool RuleManager::registerRule(unordered_map<string, string> file_content) {
         // CPU_TRIGGER_THRESHOLD can either be a percent value ('.' and '%' signs are not mandatory) or a 0 to disable the check
         // the default-value from settings-file will be used if no value for this setting was provided
         string cpu_trigger_threshold = file_content["CPU_TRIGGER_THRESHOLD"];
-        if (!cpu_trigger_threshold.empty() && !Utils::isDisableValue(&cpu_trigger_threshold)) {
+        if (!cpu_trigger_threshold.empty() && !Utils::isDisableValue(cpu_trigger_threshold)) {
 
             cpu_trigger_threshold.erase(remove_if(cpu_trigger_threshold.begin(), cpu_trigger_threshold.end(), ::isspace), cpu_trigger_threshold.end());
             rule.cpu_trigger_threshold = stod(cpu_trigger_threshold);
@@ -170,7 +170,7 @@ bool RuleManager::registerRule(unordered_map<string, string> file_content) {
             }
 
         // value is set to '0' and therefore the check is deactivated
-        } else if (!cpu_trigger_threshold.empty() && Utils::isDisableValue(&cpu_trigger_threshold)) {
+        } else if (!cpu_trigger_threshold.empty() && Utils::isDisableValue(cpu_trigger_threshold)) {
             rule.cpu_trigger_threshold = 0;
 
         // CPU_TRIGGER_THRESHOLD is not set in this rule, therefore value from global settings-file should be used
@@ -181,12 +181,12 @@ bool RuleManager::registerRule(unordered_map<string, string> file_content) {
         // MEM_TRIGGER_THRESHOLD can either be a percent value ('.' and '%' signs are not mandatory), an absolute value
         // (which can be set e.g. 1024B, 512K, 1M, etc.) or a 0 to disable the check
         string mem_trigger_threshold = file_content["MEM_TRIGGER_THRESHOLD"];
-        if (!mem_trigger_threshold.empty() && !Utils::isDisableValue(&mem_trigger_threshold)) {
+        if (!mem_trigger_threshold.empty() && !Utils::isDisableValue(mem_trigger_threshold)) {
 
             mem_trigger_threshold.erase(remove_if(mem_trigger_threshold.begin(), mem_trigger_threshold.end(), ::isspace), mem_trigger_threshold.end());
 
             // check if value is percent-value
-            if (Utils::isPercentValue(&mem_trigger_threshold)) {
+            if (Utils::isPercentValue(mem_trigger_threshold)) {
 
                 // check if the value is in percent and above 100% of the total amount of RAM on the system
                 if (stod(mem_trigger_threshold) > 100) {
@@ -213,7 +213,7 @@ bool RuleManager::registerRule(unordered_map<string, string> file_content) {
             }
 
         // value is set to '0' and therefore the check is deactivated
-        } else if (!mem_trigger_threshold.empty() && Utils::isDisableValue(&mem_trigger_threshold)) {
+        } else if (!mem_trigger_threshold.empty() && Utils::isDisableValue(mem_trigger_threshold)) {
             rule.mem_trigger_threshold = 0;
 
         // MEM_TRIGGER_THRESHOLD is not set in this rule, therefore value from global settings-file should be used
@@ -223,7 +223,7 @@ bool RuleManager::registerRule(unordered_map<string, string> file_content) {
 
         // check if values are valid (e.g. not negative values)
         string checks_before_alert = file_content["CHECKS_BEFORE_ALERT"];
-        if (!checks_before_alert.empty() && Utils::isIntegerValue(&checks_before_alert)) {
+        if (!checks_before_alert.empty() && Utils::isIntegerValue(checks_before_alert)) {
             rule.checks_before_alert = stoi(checks_before_alert);
             if (rule.checks_before_alert <= 0) {
                 logger->logError("Value for CHECKS_BEFORE_ALERT must be higher than 0");

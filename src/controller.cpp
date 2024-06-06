@@ -190,7 +190,7 @@ bool Controller::fetchProcessInfo(long pid) {
         }
 
         // calculate pcpu
-        c_process.pcpu = Utils::calcPercentCPU(&system_stat.delta_total_time, &c_process.proc_pid_stat.delta_total_time);
+        c_process.pcpu = Utils::calcPercentCPU(system_stat.delta_total_time, c_process.proc_pid_stat.delta_total_time);
 
     } else {
         // process could already be terminated

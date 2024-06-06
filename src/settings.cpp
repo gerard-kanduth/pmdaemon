@@ -45,7 +45,7 @@ bool Settings::getSendNotifications() {
     try {
 
         string sn = settings["SEND_NOTIFICATIONS"];
-        if (!Utils::isZeroOneValue(&sn)) throw 2;
+        if (!Utils::isZeroOneValue(sn)) throw 2;
 
         int send_notifications = stoi(sn);
         logger->logInfo("Setting SEND_NOTIFICATIONS to \'" + to_string(send_notifications) + "\'");
@@ -63,7 +63,7 @@ bool Settings::getGraylogEnabled() {
     try {
 
         string ge = settings["GRAYLOG_ENABLED"];
-        if (!Utils::isZeroOneValue(&ge)) throw 2;
+        if (!Utils::isZeroOneValue(ge)) throw 2;
 
         int graylog_enabled = stoi(ge);
         logger->logInfo("Setting GRAYLOG_ENABLE to \'" + to_string(graylog_enabled) + "\'");
@@ -81,7 +81,7 @@ bool Settings::getLogstashEnabled() {
     try {
 
         string le = settings["LOGSTASH_ENABLED"];
-        if (!Utils::isZeroOneValue(&le)) throw 2;
+        if (!Utils::isZeroOneValue(le)) throw 2;
 
         int logstash_enabled = stoi(le);
         logger->logInfo("Setting LOGSTASH_ENABLE to \'" + to_string(logstash_enabled) + "\'");
@@ -99,7 +99,7 @@ bool Settings::getGraylogHTTPSecure() {
     try {
 
         string ghs = settings["GRAYLOG_HTTP_SECURE"];
-        if (!Utils::isZeroOneValue(&ghs)) throw 2;
+        if (!Utils::isZeroOneValue(ghs)) throw 2;
 
         int graylog_http_secure = stoi(ghs);
         logger->logInfo("Setting GRAYLOG_HTTP_SECURE to \'" + to_string(graylog_http_secure) + "\'");
@@ -117,7 +117,7 @@ bool Settings::getLogstashHTTPSecure() {
     try {
 
         string lhs = settings["LOGSTASH_HTTP_SECURE"];
-        if (!Utils::isZeroOneValue(&lhs)) throw 2;
+        if (!Utils::isZeroOneValue(lhs)) throw 2;
 
         int logstash_http_secure = stoi(lhs);
         logger->logInfo("Setting LOGSTASH_HTTP_SECURE to \'" + to_string(logstash_http_secure) + "\'");
@@ -135,7 +135,7 @@ bool Settings::getStateTrigger() {
     try {
 
         string st = settings["STATE_TRIGGER"];
-        if (!Utils::isZeroOneValue(&st)) throw 2;
+        if (!Utils::isZeroOneValue(st)) throw 2;
 
         int state_trigger = stoi(st);
         logger->logInfo("Setting STATE_TRIGGER to \'" + to_string(state_trigger) + "\'");
@@ -153,7 +153,7 @@ bool Settings::getLoadRules() {
     try {
 
         string lr = settings["LOAD_RULES"];
-        if (!Utils::isZeroOneValue(&lr)) throw 2;
+        if (!Utils::isZeroOneValue(lr)) throw 2;
 
         int load_rules = stoi(lr);
         logger->logInfo("Setting LOAD_RULES to \'" + to_string(load_rules) + "\'");
@@ -170,7 +170,7 @@ bool Settings::getLoadRules() {
 bool Settings::getSpecificRulesCheckOnly() {
     try {
         string srco = settings["SPECIFIC_RULES_CHECK_ONLY"];
-        if (!Utils::isZeroOneValue(&srco)) throw 2;
+        if (!Utils::isZeroOneValue(srco)) throw 2;
 
         int specific_rules_check_only = stoi(srco);
         logger->logInfo("Setting SPECIFIC_RULES_CHECK_ONLY to \'" + to_string(specific_rules_check_only) + "\'");
@@ -188,7 +188,7 @@ bool Settings::getTermCgroupCleanup() {
     try {
 
         string tcc = settings["TERM_CGROUP_CLEANUP"];
-        if (!Utils::isZeroOneValue(&tcc)) throw 2;
+        if (!Utils::isZeroOneValue(tcc)) throw 2;
 
         int term_cgroup_cleanup = stoi(tcc);
         logger->logInfo("Setting TERM_CGROUP_CLEANUP to \'" + to_string(term_cgroup_cleanup) + "\'");
@@ -206,7 +206,7 @@ bool Settings::getGlobalActionEnabled() {
     try {
 
         string gae = settings["GLOBAL_ACTION_ENABLED"];
-        if (!Utils::isZeroOneValue(&gae)) throw 2;
+        if (!Utils::isZeroOneValue(gae)) throw 2;
 
         int global_action_enabled = stoi(gae);
         logger->logInfo("Setting GLOBAL_ACTION_ENABLED to \'" + to_string(global_action_enabled) + "\'");
@@ -224,7 +224,7 @@ set<string> Settings::getWhitelistedUsers() {
     try {
 
         string wuser_string = settings["WHITELISTED_USERS"];
-        if (!Utils::isCommaSepStringValue(&wuser_string)) throw 2;
+        if (!Utils::isCommaSepStringValue(wuser_string)) throw 2;
 
         set<string> whitelisted_users;
         whitelisted_users = Utils::generateStringSet(wuser_string);
@@ -244,10 +244,10 @@ double Settings::getCpuTriggerThreshold() {
     try {
 
         string ctt = settings["CPU_TRIGGER_THRESHOLD"];
-        if (!Utils::isPercentValue(&ctt) && !Utils::isDisableValue(&ctt)) throw 2;
+        if (!Utils::isPercentValue(ctt) && !Utils::isDisableValue(ctt)) throw 2;
 
         // CPU_TRIGGER_THRESHOLD is percentage value
-        if (Utils::isPercentValue(&ctt)) {
+        if (Utils::isPercentValue(ctt)) {
 
             ctt.erase(std::remove_if(ctt.begin(), ctt.end(), ::isspace), ctt.end());
 
@@ -274,7 +274,7 @@ double Settings::getJailCPULimit() {
     try {
 
         string jcl = settings["JAIL_CPU_LIMIT"];
-        if (!Utils::isPercentValue(&jcl)) throw 2;
+        if (!Utils::isPercentValue(jcl)) throw 2;
 
         jcl.erase(std::remove_if(jcl.begin(), jcl.end(), ::isspace), jcl.end());
 
@@ -300,16 +300,16 @@ long long Settings::getMemTriggerThreshold() {
         string mtt = settings["MEM_TRIGGER_THRESHOLD"];
         string mtt_unit;
 
-        if (!Utils::isMemValue(&mtt) && !Utils::isDisableValue(&mtt)) throw 2;
+        if (!Utils::isMemValue(mtt) && !Utils::isDisableValue(mtt)) throw 2;
 
         mtt.erase(std::remove_if(mtt.begin(), mtt.end(), ::isspace), mtt.end());
         mtt_unit = mtt.back();
         transform(mtt_unit.begin(), mtt_unit.end(), mtt_unit.begin(), ::tolower);
 
-        if (Utils::isPercentValue(&mtt)) {
+        if (Utils::isPercentValue(mtt)) {
             mv = (Utils::total_ram * stod(mtt)) / 100;
 
-        } else if (Utils::isAbsoluteMemValue(&mtt)) {
+        } else if (Utils::isAbsoluteMemValue(mtt)) {
             mv = Utils::convertToBytes(mtt_unit, mtt.substr(0, mtt.size()-1));
 
         } else {
@@ -337,7 +337,7 @@ long long Settings::getJailMEMLimit() {
     try {
 
         string jml = settings["JAIL_MEM_LIMIT"];
-        if (!Utils::isMemValue(&jml)) throw 2;
+        if (!Utils::isMemValue(jml)) throw 2;
 
         string jml_unit;
         long long jml_bytes;
@@ -348,13 +348,13 @@ long long Settings::getJailMEMLimit() {
         jml_unit = jml.back();
         transform(jml_unit.begin(), jml_unit.end(), jml_unit.begin(), ::tolower);
 
-        if (Utils::isPercentValue(&jml)) {
+        if (Utils::isPercentValue(jml)) {
 
             // remove percent sign
             jml.erase(jml.find_first_of('%'));
             jml_bytes = static_cast<long>((Utils::total_ram * stod(jml)) / 100);
 
-        } else if (Utils::isAbsoluteMemValue(&jml)) {
+        } else if (Utils::isAbsoluteMemValue(jml)) {
             jml_bytes = Utils::convertToBytes(jml_unit, jml.substr(0, jml.size()-1));
 
         } else {
@@ -376,7 +376,7 @@ int Settings::getGraylogPort() {
     try {
 
         string gp = settings["GRAYLOG_PORT"];
-        if (!Utils::isIntegerValue(&gp)) throw 2;
+        if (!Utils::isIntegerValue(gp)) throw 2;
 
         int graylog_port = stoi(gp);
         if (graylog_port > 0) {
@@ -396,7 +396,7 @@ int Settings::getLogstashPort() {
     try {
 
         string lp = settings["LOGSTASH_PORT"];
-        if (!Utils::isIntegerValue(&lp)) throw 2;
+        if (!Utils::isIntegerValue(lp)) throw 2;
 
         int logstash_port = stoi(lp);
         if (logstash_port > 0) {
@@ -416,7 +416,7 @@ int Settings::getCheckInterval() {
     try {
 
         string ci = settings["CHECK_INTERVAL"];
-        if (!Utils::isIntegerValue(&ci)) throw 2;
+        if (!Utils::isIntegerValue(ci)) throw 2;
 
         int check_interval = stoi(ci);
         if (check_interval > 0) {
@@ -436,7 +436,7 @@ int Settings::getChecksBeforeAlert() {
     try {
 
         string cba = settings["CHECKS_BEFORE_ALERT"];
-        if (!Utils::isIntegerValue(&cba)) throw 2;
+        if (!Utils::isIntegerValue(cba)) throw 2;
 
         int checks_before_alert = stoi(cba);
         if (checks_before_alert > 0) {
@@ -456,7 +456,7 @@ int Settings::getChecksCooldown() {
     try {
 
         string cc = settings["CHECKS_COOLDOWN"];
-        if (!Utils::isIntegerValue(&cc)) throw 2;
+        if (!Utils::isIntegerValue(cc)) throw 2;
 
         int checks_cooldown = stoi(cc);
         if (checks_cooldown > 0) {
@@ -476,7 +476,7 @@ int Settings::getMaxErrors() {
     try {
 
         string me = settings["MAX_ERRORS"];
-        if (!Utils::isIntegerValue(&me)) throw 2;
+        if (!Utils::isIntegerValue(me)) throw 2;
 
         int max_errors = stoi(me);
         if (max_errors >= 0) {
@@ -496,7 +496,7 @@ int Settings::getMaxAlertGlobalAction() {
     try {
 
         string maga = settings["MAX_ALERTS_GLOBAL_ACTION"];
-        if (!Utils::isIntegerValue(&maga)) throw 2;
+        if (!Utils::isIntegerValue(maga)) throw 2;
 
         int max_alert_global_action = stoi(maga);
         if (max_alert_global_action > 0) {
@@ -516,7 +516,7 @@ int Settings::getDebugLevel() {
     try {
 
         string dl = settings["DEBUG_LEVEL"];
-        if (!Utils::isIntegerValue(&dl)) throw 2;
+        if (!Utils::isIntegerValue(dl)) throw 2;
 
         int debug_level = stoi(dl);
         if (debug_level > 0 && debug_level <= 2) {
@@ -535,7 +535,7 @@ string Settings::getGraylogFQDN() {
     try {
 
         string graylog_fqdn = settings["GRAYLOG_FQDN"];
-        if (!Utils::isFQDNValue(&graylog_fqdn)) throw 2;
+        if (!Utils::isFQDNValue(graylog_fqdn)) throw 2;
 
         transform(graylog_fqdn.begin(), graylog_fqdn.end(), graylog_fqdn.begin(), ::tolower);
         graylog_fqdn.erase(std::remove_if(graylog_fqdn.begin(), graylog_fqdn.end(), ::isspace), graylog_fqdn.end());
@@ -554,7 +554,7 @@ string Settings::getLogstashFQDN() {
     try {
 
         string logstash_fqdn = settings["LOGSTASH_FQDN"];
-        if (!Utils::isFQDNValue(&logstash_fqdn)) throw 2;
+        if (!Utils::isFQDNValue(logstash_fqdn)) throw 2;
 
         transform(logstash_fqdn.begin(), logstash_fqdn.end(), logstash_fqdn.begin(), ::tolower);
         logstash_fqdn.erase(std::remove_if(logstash_fqdn.begin(), logstash_fqdn.end(), ::isspace), logstash_fqdn.end());

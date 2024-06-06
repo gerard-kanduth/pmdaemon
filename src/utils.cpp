@@ -14,58 +14,58 @@ bool Utils::checkIfDirectoryExists(string directory) {
 
 }
 
-bool Utils::isZeroOneValue(string* input) {
+bool Utils::isZeroOneValue(string &input) {
 
-    if (regex_match(*input, regex_zero_one_value)) return true;
+    if (regex_match(input, regex_zero_one_value)) return true;
     return false;
 
 }
 
-bool Utils::isPercentValue(string* input) {
+bool Utils::isPercentValue(string &input) {
 
-    if (regex_match(*input, regex_percent_value)) return true;
+    if (regex_match(input, regex_percent_value)) return true;
     return false;
 
 }
 
-bool Utils::isIntegerValue(string* input) {
+bool Utils::isIntegerValue(string &input) {
 
-    if (regex_match(*input, regex_int_value)) return true;
+    if (regex_match(input, regex_int_value)) return true;
     return false;
 
 }
 
-bool Utils::isCommaSepStringValue(string* input) {
+bool Utils::isCommaSepStringValue(string &input) {
 
-    if (regex_match(*input, regex_comma_sep_strings)) return true;
+    if (regex_match(input, regex_comma_sep_strings)) return true;
     return false;
 
 }
 
-bool Utils::isFQDNValue(string* input) {
+bool Utils::isFQDNValue(string &input) {
 
-    if (regex_match(*input, regex_fqdn_value)) return true;
+    if (regex_match(input, regex_fqdn_value)) return true;
     return false;
 
 }
 
-bool Utils::isMemValue(string* input) {
+bool Utils::isMemValue(string &input) {
 
-    if (regex_match(*input, regex_abs_mem_value) || regex_match(*input, regex_percent_value)) return true;
+    if (regex_match(input, regex_abs_mem_value) || regex_match(input, regex_percent_value)) return true;
     return false;
 
 }
 
-bool Utils::isDisableValue(string* input) {
+bool Utils::isDisableValue(string &input) {
 
-    if (regex_match(*input, regex_disable_value)) return true;
+    if (regex_match(input, regex_disable_value)) return true;
     return false;
 
 }
 
-bool Utils::isAbsoluteMemValue(string* input) {
+bool Utils::isAbsoluteMemValue(string &input) {
 
-    if (regex_match(*input, regex_abs_mem_value)) return true;
+    if (regex_match(input, regex_abs_mem_value)) return true;
     return false;
 
 }
@@ -88,14 +88,14 @@ bool Utils::writeToFile(string filename, string text) {
 
 }
 
-int Utils::getActiveCoresCount(string *stat_output) {
+int Utils::getActiveCoresCount(string &stat_output) {
 
     int active_cores = 0;
 
     try {
 
         string line;
-        istringstream output_stream(*stat_output);
+        istringstream output_stream(stat_output);
         while (getline(output_stream, line)) {
             if (regex_match(line, regex_cpu_stat)) active_cores++;
         }
@@ -155,8 +155,8 @@ long long Utils::convertToBytes(string unit, string value) {
 
 }
 
-double Utils::calcPercentCPU(unsigned long long *sys_delta_total_time, unsigned long long *pid_delta_total_time) {
-    return (double)(((float)*pid_delta_total_time / (float)*sys_delta_total_time) * 100.0);
+double Utils::calcPercentCPU(unsigned long long &sys_delta_total_time, unsigned long long &pid_delta_total_time) {
+    return (double)(((float)pid_delta_total_time / (float)sys_delta_total_time) * 100.0);
 }
 
 string Utils::lowerText(char* txt) {
@@ -340,7 +340,7 @@ ProcSysStat Utils::parseStatFile() {
     // only read total-values, no need to parse each core
     try {
         string output = readFromFile(PROC_STAT_FILE);
-        sys_stat.active_cores = Utils::getActiveCoresCount(&output);
+        sys_stat.active_cores = Utils::getActiveCoresCount(output);
 
         sscanf(output.c_str(),
             "cpu  %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu",
