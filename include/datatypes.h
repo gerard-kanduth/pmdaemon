@@ -109,7 +109,6 @@ struct PenaltyListItem {
     string cgroup_name;
     bool alerted = false;
     bool in_cgroup = false;
-    bool limited = false;
 };
 
 struct ProcSysStat {

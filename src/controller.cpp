@@ -435,7 +435,7 @@ bool Controller::checkPenaltyList(Process &process, string penalty_cause) {
                             }
                             break;
                         case ACTION_JAIL:
-                            if (addPidToJail(process.pid)) {
+                            if (addPIDToJail(process.pid)) {
                                 global_penalty_list[process.pid].in_cgroup = true;
                                 global_penalty_list[process.pid].cgroup_name = JAIL_CGROUP CGROUP_PID_PREFIX + to_string(process.pid);
                                 logger->logInfo("ACTION: jail" + ss.str());
@@ -482,8 +482,9 @@ bool Controller::checkPenaltyList(Process &process, string penalty_cause) {
 
                 // if ENABLE_LIMITING is set to 1 limit the process and add it to the corresponding cgroup
                 if (specific_rule->enable_limiting) {
-                    if (doLimit(process)) {
+                    if (addPIDToCgroup(specific_rule->cgroup_root_dir, process.pid)) {
                             penalty_list_it->second.in_cgroup = true;
+                            penalty_list_it->second.cgroup_name = specific_rule->cgroup_root_dir + CGROUP_PID_PREFIX + to_string(process.pid);
                             logger->logInfo("ACTION: limit" + ss.str());
                             if (send_notifications && (graylog_enabled || logstash_enabled)) SendMessage(collectProcessInfo(process, penalty_cause), LIMIT);
                     } else {
@@ -573,11 +574,10 @@ bool Controller::cleanupPenaltyList() {
             } else {
                 penalty_list_it = penalty_list.find(penalty_list_it->first);
 
-                if (penalty_list_it->second.limited) {
-                    removeCgroup(penalty_list_it->second.cgroup_name);
-                }
+                // make sure cgroups will be removed again if a PID terminated
+                if (penalty_list_it->second.in_cgroup) removeCgroup(penalty_list_it->second.cgroup_name);
 
-                logger->logInfo("Removing PID " + to_string(penalty_list_it->first) + " from penalty list");
+                logger->logDebug("Removing PID " + to_string(penalty_list_it->first) + " from penalty list");
                 penalty_list.erase(penalty_list_it);
                 penalty_list_it = penalty_list.end();
                 break;
@@ -596,9 +596,10 @@ bool Controller::cleanupPenaltyList() {
             } else {
                 global_penalty_list_it = global_penalty_list.find(global_penalty_list_it->first);
 
+                // make sure cgroups will be removed again if a PID terminated
                 if (global_penalty_list_it->second.in_cgroup) removeCgroup(global_penalty_list_it->second.cgroup_name);
 
-                logger->logInfo("Removing PID " + to_string(global_penalty_list_it->first) + " from global penalty list");
+                logger->logDebug("Removing PID " + to_string(global_penalty_list_it->first) + " from global penalty list");
                 global_penalty_list.erase(global_penalty_list_it);
                 global_penalty_list_it = global_penalty_list.end();
                 break;
@@ -609,7 +610,7 @@ bool Controller::cleanupPenaltyList() {
     return true;
 }
 
-bool Controller::addPIDToCgroup(string& cgroup_parent_group, long& pid) {
+bool Controller::addPIDToCgroup(string &cgroup_parent_group, long &pid) {
 
     stringstream cgroup;
     stringstream cgroup_procs_file;
@@ -622,7 +623,7 @@ bool Controller::addPIDToCgroup(string& cgroup_parent_group, long& pid) {
 
 }
 
-bool Controller::addPidToJail(long pid) {
+bool Controller::addPIDToJail(long &pid) {
 
     stringstream jail_cgrp;
     jail_cgrp << JAIL_CGROUP CGROUP_PID_PREFIX << to_string(pid);
@@ -779,10 +780,6 @@ bool Controller::createJailCgroup(double cpu_limit, long long mem_limit) {
 
     return true;
 
-}
-
-bool Controller::doLimit(Process &process) {
-    return addPIDToCgroup(specific_rule->cgroup_root_dir, process.pid);
 }
 
 bool Controller::removeCgroup(string cgroup) {
@@ -1083,7 +1080,8 @@ void Controller::showInformation(bool show_rules) {
             << "pid: " << to_string(r.second.pid)
             << " penalty_cause: " << r.second.penalty_cause
             << " alert_counter: " << r.second.alert_counter
-            << " in_cgroup: " << r.second.in_cgroup;
+            << " in_cgroup: " << r.second.in_cgroup
+            << " cgroup_name: " << r.second.cgroup_name;
 
         logger->logInfo(global_penalty_list_item.str());
     }
@@ -1101,7 +1099,8 @@ void Controller::showInformation(bool show_rules) {
             << " penalty_counter: " << to_string(r.second.penalty_counter)
             << " cooldown_counter: " << to_string(r.second.cooldown_counter)
             << " alerted: " << r.second.alerted
-            << " in_cgroup: " << r.second.in_cgroup;
+            << " in_cgroup: " << r.second.in_cgroup
+            << " cgroup_name: " << r.second.cgroup_name;
 
         logger->logInfo(penalty_list_item.str());
     }

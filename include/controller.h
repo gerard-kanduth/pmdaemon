@@ -140,7 +140,7 @@ class Controller {
         ProcessInfo collectProcessInfo(Process&, string);
         bool fetchProcessInfo(long);
         bool addPIDToCgroup(string&, long&);
-        bool addPidToJail(long);
+        bool addPIDToJail(long&);
         bool checkProcess(Process&);
         bool curlPostJSON(const char*, MessageCollector);
         bool checkIfCgroupEmpty(string&, long&);
@@ -149,7 +149,6 @@ class Controller {
         bool createPIDCgroup(string&, long&);
         bool createJailPIDCgroup(string);
         bool createJailCgroup(double, long long);
-        bool doLimit(Process&);
         bool enableCgroupControllers();
         bool iterateProcessList();
         bool pausePID(long);
