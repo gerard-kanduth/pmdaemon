@@ -87,6 +87,13 @@ Number of faulty check-cycles before daemon terminates.
 MAX_ERRORS=10
 ```
 
+Max number of chars which should be read per command.
+This setting is needed to trim and limit extremely large commands.
+> Available Values: *1* - *2147483647* (*0* is not allowed)
+```
+MAX_CMD_CHARS_READ=5000
+```
+
 Set the check-interval for the daemon in seconds (0 is not allowed).
 > Available Values: *1* - *2147483647* (*0* is not allowed)
 ```
@@ -462,6 +469,7 @@ SEND_NOTIFICATIONS=1
 - WHITELISTED_USERS (list) can now be set in settings file to whitelist users, processes of such users will not be monitored
 - Improved the monitoring-routine for systems with higher amount of rules and processes
 - REGEX_SEARCH_ENABLED and REGEX_SEARCH_PATTERN can now be used to search with Regex-Patterns for processes instead of COMMAND
+- Added MAX_CMD_CHARS_READ to limit amount of chars which should be read from command
 - Additional Debug log-levels (1, 2) are now possible
 - Improved check-routine for reading settings and specific rules (changed to regex-patterns)
 - SEND_PROCESS_FILES is now called SEND_NOTIFICATIONS and will decide if in general notifications should be send

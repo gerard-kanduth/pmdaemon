@@ -22,6 +22,7 @@ class Settings {
             "LOGLEVEL",
             "DEBUG_LEVEL",
             "MAX_ERRORS",
+            "MAX_CMD_CHARS_READ",
             "RULES_DIRECTORY",
             "LOAD_RULES",
             "SPECIFIC_RULES_CHECK_ONLY",
@@ -87,6 +88,7 @@ class Settings {
         int getGraylogPort();
         int getLogstashPort();
         int getMaxErrors();
+        int getMaxCMDCharsRead();
         int getMaxAlertGlobalAction();
         int getDebugLevel();
         long long getJailMEMLimit();

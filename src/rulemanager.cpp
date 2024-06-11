@@ -439,6 +439,7 @@ Rule* RuleManager::loadIfRuleExists(string command) {
             if (regex_match(command, r.second.regex_search_pattern)) return &rules[r.first];
 
         } else if (!r.second.regex_search_enabled) {
+
             // check if the command starts with the command-string from rule
             if (command.rfind(r.second.command, 0) == 0) return &rules[r.first];
 

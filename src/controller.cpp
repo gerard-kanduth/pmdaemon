@@ -17,6 +17,7 @@ Controller::Controller() {
 
     // load available settings
     max_errors = settings->getMaxErrors();
+    max_cmd_chars_read = settings->getMaxCMDCharsRead();
     default_cpu_trigger_threshold = settings->getCpuTriggerThreshold();
     default_mem_trigger_threshold = settings->getMemTriggerThreshold();
     default_checks_before_alert = settings->getChecksBeforeAlert();
@@ -166,9 +167,9 @@ bool Controller::fetchProcessInfo(long pid) {
     }
 
     // read the /proc/<pid>/cmdline or (if daemon/service) the /proc/<pid>/comm file
-    out_cmdline = Utils::readFromFile(c_process.proc_pid_dir + "/cmdline", true);
+    out_cmdline = Utils::readTrimmedCMD(c_process.proc_pid_dir + "/cmdline", max_cmd_chars_read);
     if (out_cmdline.empty()) {
-        out_cmdline = Utils::readFromFile(c_process.proc_pid_dir + "/comm", true);
+        out_cmdline = Utils::readTrimmedCMD(c_process.proc_pid_dir + "/comm", max_cmd_chars_read);
     }
 
     // read and parse the process'es /proc/<pid>/stat file

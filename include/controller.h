@@ -60,6 +60,9 @@ class Controller {
         // number of failed checks
         int error_checks = 0;
 
+        // max number of chars which should be read from command
+        int max_cmd_chars_read;
+
         // max number of fails before daemon terminates
         int max_errors;
 

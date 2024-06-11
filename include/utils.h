@@ -43,8 +43,8 @@ class Utils {
         static ProcSysStat parseStatFile();
         static string lowerText(string);
         static string lowerText(char*);
-        static string readFromFile(string, bool);
         static string readFromFile(string);
+        static string readTrimmedCMD(string, int&);
         static string setToComSepString(set<string>);
         static string generateJailMaxCPU(double);
         static string generateMaxCPU(double, string);

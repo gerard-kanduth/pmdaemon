@@ -479,7 +479,7 @@ int Settings::getMaxErrors() {
         if (!Utils::isIntegerValue(me)) throw 2;
 
         int max_errors = stoi(me);
-        if (max_errors >= 0) {
+        if (max_errors > 0) {
             logger->logInfo("Setting MAX_ERRORS to \'" + to_string(max_errors) + "\'");
             return max_errors;
         }
@@ -487,6 +487,26 @@ int Settings::getMaxErrors() {
 
     } catch (...) {
         logger->logError("Invalid MAX_ERRORS value in configuration!");
+        logger->logDebug("Allowed Values: [ '1' - '1E+32' ]");
+        exit(EXIT_FAILURE);
+    }
+}
+
+int Settings::getMaxCMDCharsRead() {
+    try {
+
+        string mccr = settings["MAX_CMD_CHARS_READ"];
+        if (!Utils::isIntegerValue(mccr)) throw 2;
+
+        int max_cmd_chars_read = stoi(mccr);
+        if (max_cmd_chars_read > 0) {
+            logger->logInfo("Setting MAX_CMD_CHARS_READ to \'" + to_string(max_cmd_chars_read) + "\'");
+            return max_cmd_chars_read;
+        }
+        else throw 2;
+
+    } catch (...) {
+        logger->logError("Invalid MAX_CMD_CHARS_READ value in configuration!");
         logger->logDebug("Allowed Values: [ '1' - '1E+32' ]");
         exit(EXIT_FAILURE);
     }

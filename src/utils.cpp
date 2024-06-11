@@ -175,33 +175,33 @@ string Utils::lowerText(string txt) {
 }
 
 string Utils::readFromFile(string filename) {
-    return readFromFile(filename, false);
-}
-
-string Utils::readFromFile(string filename, bool null_terminated) {
 
     try {
-
         stringstream ss;
-
-        if (!null_terminated) {
-            ifstream f(filename, ifstream::in);
-            while(f >> ss.rdbuf());
-        } else {
-            ifstream f(filename, ifstream::in);
-            while(f >> ss.rdbuf());
-            string output = ss.str();
-            replace(output.begin(), output.end(), '\0', ' ');
-            return output;
-        }
-
+        ifstream f(filename, ifstream::in);
+        while(f >> ss.rdbuf());
         return ss.str();
-
     } catch (...) {
         Logger::getInstance()->logError("Unable to read from " + filename);
         return {};
     }
 
+}
+
+string Utils::readTrimmedCMD(string filename, int &max_cmd_chars_read) {
+
+    try {
+        stringstream ss;
+        ifstream f(filename, ifstream::in);
+        while(f >> ss.rdbuf());
+        string output = ss.str();
+        if (output.size() > max_cmd_chars_read) output = output.substr(0, max_cmd_chars_read);
+        replace(output.begin(), output.end(), '\0', ' ');
+        return output;
+    } catch (...) {
+        Logger::getInstance()->logError("Unable to read from " + filename);
+        return {};
+    }
 }
 
 string Utils::setToComSepString(set<string> s) {

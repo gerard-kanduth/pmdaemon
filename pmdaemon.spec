@@ -1,6 +1,6 @@
 Name:     	pmdaemon
 Version:  	1.1
-Release:  	3%{?dist}
+Release:  	4%{?dist}
 Summary:  	Process Monitoring Daemon package
 License:  	GPLv3+
 URL:      	https://github.com/gerard-kanduth/pmdaemon
