@@ -91,6 +91,7 @@ Max number of chars which should be read per command.
 This setting is needed to trim and limit extremely large commands.
 > Available Values: *1* - *2147483647* (*0* is not allowed)
 ```
+# Example(s)
 MAX_CMD_CHARS_READ=5000
 ```
 
@@ -189,6 +190,7 @@ JAIL_MEM_LIMIT=0
 Decide if an alert should be triggered if the process changes it's state to Z or D.
 > Available Values: (off) *0*, (on) *1*
 ```
+# Example(s)
 STATE_TRIGGER=0
 ```
 
@@ -410,7 +412,7 @@ Limit the given process to the following core limit (in percent).
 **Note:** No CPU limiting will be performed if this setting was not added in a rule.
 > Available Values: (Percentage) *0%* - *100%*, *0.0%* - *100.0%*
 ```
-/* Examples */
+# Examples(s)
 LIMIT_CPU_PERCENT=5
 ```
 
@@ -462,7 +464,19 @@ SEND_NOTIFICATIONS=1
 
 ## CHANGELOG
 
-### pmdaemon v1.1
+### pmdaemon v1.1-5
+
+#### Features and Improvements
+- Better error-reporting for check-routine
+- Improved function for cgroup-cleanup
+- Added function for removing all PIDs of a cgroup
+- More precise description for this and upcoming builds in the changelog-section
+
+#### Bugfixes
+- Errors will now be more precise if something went wrong during check-routine
+- Removing cgroups will now no longer result in errors if additional PIDs are in the corresponding cgroup
+
+### pmdaemon v1.1-(1-4)
 
 #### Features and Improvements
 - Rules in rule-directory can now have ".rule" or ".conf" ending to be read (".rule" is prefered)
