@@ -670,31 +670,31 @@ bool Controller::cleanupCgroups(bool remove_cgroups) {
 
     logger->logNotice("Starting cgroup cleanup. Jailed PIDs will be freed.");
 
-    bool cleanup_successful = true;
+    int errors = 0;
     long pid;
 
     // remove all PIDs from created cgroups
     for (auto& dir: fs::directory_iterator(CGROUP_ROOT)) {
-        string cgroup_root_dir = dir.path().filename().string();
-        if (is_directory(dir.path()) && regex_match(cgroup_root_dir, regex_daemon_cgroup)) {
-            for (auto& sub_dir: fs::directory_iterator(dir)) {
-                if (is_directory(sub_dir.path())) {
-                    string cgroup_sub_dir = sub_dir.path().filename().string();
-                    ifstream infile(sub_dir.path().string() + CGROUP_PROCS_FILE);
-                    while (infile >> pid)
-                    {
-                        logger->logDebug("Removing PID " + to_string(pid) + " from cgroup " + cgroup_sub_dir);
-                        if (!removePIDFromCgroup(pid)) {
-                            logger->logError("Unable to remove " + to_string(pid) + " from penalty list.");
-                            cleanup_successful = false;
-                        }
-                    }
-                    // remove the sub-dirs in cgroups if true parameter
-                    if (remove_cgroups) cleanup_successful = removeCgroup(sub_dir.path().string());
+
+	string cgroup_root_dir = dir.path().filename().string();
+
+	if (is_directory(dir.path()) && regex_match(cgroup_root_dir, regex_daemon_cgroup)) {
+
+	    for (auto& sub_dir: fs::directory_iterator(dir)) {
+
+	        if (is_directory(sub_dir.path())) {
+
+                    string cgroup_sub_dir = sub_dir.path().string();
+
+		    // remove all PIDs from cgroup
+                    if (!removeAllPIDsFromCgroup(cgroup_sub_dir)) errors++;
+
+		    // remove the sub-dirs in cgroups if true parameter
+                    if (remove_cgroups) if (!removeCgroup(cgroup_sub_dir)) errors++;
                 }
             }
             // remove the parent cgroup if true parameter
-            if (remove_cgroups) cleanup_successful = removeCgroup(dir.path().string());
+            if (remove_cgroups) if (!removeCgroup(dir.path().string())) errors++;
         }
     }
 
@@ -712,7 +712,8 @@ bool Controller::cleanupCgroups(bool remove_cgroups) {
         else ++it;
     }
 
-    return cleanup_successful;
+    if (errors > 0) return false;
+    return true;
 }
 
 bool Controller::createPIDCgroup(string& cgroup_parent_group, long& pid) {
