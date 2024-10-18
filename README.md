@@ -471,10 +471,12 @@ SEND_NOTIFICATIONS=1
 - Improved function for cgroup-cleanup
 - Added function for removing all PIDs of a cgroup
 - More precise description for this and upcoming builds in the changelog-section
+- Added automatic restart of the service if the daemon was terminated due to reaching MAX_ERRORS limit
 
 #### Bugfixes
 - Errors will now be more precise if something went wrong during check-routine
 - Removing cgroups will now no longer result in errors if additional PIDs are in the corresponding cgroup
+- Removed unnecessary duplicate string-parsings in cleanupPenaltyList() function
 
 ### pmdaemon v1.1-(1-4)
 
