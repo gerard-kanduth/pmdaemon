@@ -156,6 +156,7 @@ class Controller {
         bool iterateProcessList();
         bool pausePID(long);
         bool killPID(long);
+	bool removeAllPIDsFromCgroup(string);
         bool removeCgroup(string);
         bool removePIDFromCgroup(long);
         string readProcFile(string, long&);

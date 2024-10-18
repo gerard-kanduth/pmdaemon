@@ -117,11 +117,11 @@ bool Controller::doCheck() {
 
     // catch if an error occurs during check-cycle
     } catch (...) {
-        logger->logError("Unable to iterate process list!");
+        logger->logError("Something went wrong during check-routine");
         error_checks++;
 
         // terminate if number of failed checks exceeded
-        if (error_checks >= max_errors){
+        if (error_checks >= max_errors) {
             logger->logError("More than " + to_string(max_errors)+ " errors during check-routine! Terminating Daemon ...");
             return false;
         }
@@ -178,8 +178,7 @@ bool Controller::fetchProcessInfo(long pid) {
     // calculate overall cpu-time
     c_process.proc_pid_stat.total_time = c_process.proc_pid_stat.utime + c_process.proc_pid_stat.stime;
 
-    if (c_process.proc_pid_stat.valid)
-    {
+    if (c_process.proc_pid_stat.valid) {
 
         // populate the pcpu_pid_list (needed for pcpu calculation)
         if (pcpu_pid_list.find(c_process.pid) != pcpu_pid_list.end()) {
@@ -237,7 +236,6 @@ bool Controller::iterateProcessList() {
 
             // retrieve all process-directories of /proc
             for (auto& file: fs::directory_iterator(PROC_DIR)) {
-
                 proc_pid_file = file.path().filename().string();
 
                 if (is_directory(file.path()) && regex_match(proc_pid_file, regex_pid_value)) {
@@ -576,7 +574,12 @@ bool Controller::cleanupPenaltyList() {
                 penalty_list_it = penalty_list.find(penalty_list_it->first);
 
                 // make sure cgroups will be removed again if a PID terminated
-                if (penalty_list_it->second.in_cgroup) removeCgroup(penalty_list_it->second.cgroup_name);
+                if (penalty_list_it->second.in_cgroup) {
+			if (!removeCgroup(penalty_list_it->second.cgroup_name))	{
+				logger->logError("Something went wrong during penalty list cleanup");
+				return false;
+			}
+		}
 
                 logger->logDebug("Removing PID " + to_string(penalty_list_it->first) + " from penalty list");
                 penalty_list.erase(penalty_list_it);
@@ -598,7 +601,12 @@ bool Controller::cleanupPenaltyList() {
                 global_penalty_list_it = global_penalty_list.find(global_penalty_list_it->first);
 
                 // make sure cgroups will be removed again if a PID terminated
-                if (global_penalty_list_it->second.in_cgroup) removeCgroup(global_penalty_list_it->second.cgroup_name);
+                if (global_penalty_list_it->second.in_cgroup) {
+			if (!removeCgroup(global_penalty_list_it->second.cgroup_name)) {
+				logger->logError("Something went wrong during global penalty list cleanup");
+				return false;
+			}
+		}
 
                 logger->logDebug("Removing PID " + to_string(global_penalty_list_it->first) + " from global penalty list");
                 global_penalty_list.erase(global_penalty_list_it);
@@ -607,7 +615,6 @@ bool Controller::cleanupPenaltyList() {
             }
         }
     }
-
     return true;
 }
 
@@ -783,18 +790,50 @@ bool Controller::createJailCgroup(double cpu_limit, long long mem_limit) {
 
 }
 
+bool Controller::removeAllPIDsFromCgroup(string cgroup) {
+
+    long pid;
+
+    if (fs::exists(cgroup)) {
+
+	ifstream infile(cgroup + CGROUP_PROCS_FILE);
+        while (infile >> pid)
+	{
+            logger->logInfo("Removing PID " + to_string(pid) + " from cgroup" + cgroup);
+	    if (!removePIDFromCgroup(pid))
+	    {
+                logger->logError("Unable to remove " + to_string(pid) + " from cgroup " + cgroup);
+		return false;
+	    }
+	}
+    }
+
+    return true;
+}
+
 bool Controller::removeCgroup(string cgroup) {
 
     if (fs::exists(cgroup)) {
-        if (filesystem::remove(cgroup)) {
+        try {
+
+	    // make sure all PIDs are removed from cgroup
+	    if (!removeAllPIDsFromCgroup(cgroup))
+	    {
+                logger->logError("Unable to remove PIDs from " + cgroup);
+		return false;
+	    }
+
+	    // remove the cgroup from the pseudo-filesystem
+	    filesystem::remove(cgroup);
             logger->logInfo("Removed cgroup " + cgroup);
-            return true;
-        }
-        else {
+
+	} catch (std::filesystem::filesystem_error const& e) {
             logger->logError("Unable to remove cgroup " + cgroup);
+	    logger->logDebug(e.what());
             return false;
         }
     }
+
     return true;
 }
 
